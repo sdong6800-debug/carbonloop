@@ -88,7 +88,7 @@
  const typeLabel=box.querySelector('label[for="entryType"]'),materialLabel=box.querySelector('label[for="entryMaterial"]'),oldHelp=$('entryMaterialBasis').nextElementSibling;
  typeLabel.before(corrections);for(const el of [typeLabel,$('entryType'),$('entryTypeBasis'),materialLabel,$('entryMaterial'),$('entryMaterialBasis')])corrections.append(el);
  oldHelp.textContent='混凝土与钢筋分别记录；未建模的钢筋不会自动补出数量。没有计算数据的材料保留分类，不当作零排放。';
- corrections.append(Object.assign(document.createElement('label'),{className:'entry-apply-similar',innerHTML:'<input id="entryApplySimilar" type="checkbox">将本次修改与确认应用到同来源的同类构件 <span id="entrySimilarCount"></span>'}));
+ corrections.append(Object.assign(document.createElement('label'),{className:'entry-apply-similar',innerHTML:'<input id="entryApplySimilar" type="checkbox">同时应用到当前材料组 <span id="entrySimilarCount"></span>'}));
  $('entryConfirmHelp').textContent='这里只核对分类与设计意图；计算数据是否齐全由系统另行检查，不代表结构安全。';
  // Keep editable fields above optional provenance; never bury the correction controls.
  $('entryObjectTitle').after(corrections);corrections.after($('entryConfirmOne'));
@@ -169,14 +169,17 @@
   $('entryMatchBasis').textContent=r.materialEdited?'你已修正目录分类；上方原始材料记录不变，可对照检查。':r.matchBasis;
   $('entryCalculationState').hidden=!C.element(r).error;
   $('entryCalculationState').textContent=C.element(r).error||('已接入 KBOB '+C.factorFor(r.material).id+' · '+C.factorNote(r.material)+'。仅生产＋处置，非全生命周期。');
-  $('entrySimilarCount').textContent=`（${peers(r).length} 个，均在本次范围内）`;
+  $('entrySimilarCount').textContent=`（本组 ${peers(r).length} 个 / 本次模型共 ${rows.length} 个）`;
   $('entryApplySimilar').disabled=readOnly||peers(r).length<2;
   $('entryTypeState').textContent=r.typeConfirmed?'已人工确认':'待确认';$('entryMaterialState').textContent=r.materialConfirmed?'已人工确认':'待确认';
   $('entryTypeBasis').textContent=r.typeEdited?'依据：你在本次核对中修改的分类。':r.typeInference?`${r.typeInference.basis} 置信度 ${Math.round((r.typeInference.confidence||0)*100)}%。`:'依据：示例预设分类。';
   $('entryMaterialBasis').textContent=r.materialEdited?'依据：你修正的材料分类；不代表已取得计算因子或材料性能。':r.matchBasis;
   $('entryType').disabled=readOnly;$('entryMaterial').disabled=readOnly;
   const similar=$('entryApplySimilar').checked?peers(r):[r],confirmable=similar.filter(item=>!confirmed(item)&&!uncertain(item));
-  $('entryConfirmOne').textContent=$('entryApplySimilar').checked&&similar.length>1?`确认这 ${similar.length} 个同类构件`:'确认当前构件';
+  $('entryConfirmOne').textContent=$('entryApplySimilar').checked&&similar.length>1?`确认当前材料组的 ${similar.length} 个`:'确认当前构件';
+  $('entryConfirmHelp').textContent=$('entryApplySimilar').checked&&similar.length>1
+   ?`这里只确认当前材料组 ${similar.length} 个，不是本次模型全部 ${rows.length} 个。要批量确认全部已识别构件，请使用页面上方的“一键确认全部已识别构件”。`
+   :'这里只核对当前构件的分类与材料；计算数据是否齐全由系统另行检查，不代表结构安全。';
   $('entryConfirmOne').disabled=readOnly||!confirmable.length;
  }
  function render(){
