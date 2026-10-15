@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),M=require('./material-intake.js'),C=require('./model-core.js');
-const cases=[['现浇混凝土 C30/37','concrete-cast'],['Precast concrete C40/50','concrete-precast'],['Steel section S355','steel-section'],['Glulam GL28h','timber-glulam'],['CLT floor panel','timber-clt'],['HRB400 钢筋','rebar'],['钢筋网','rebar-mesh'],['Clay brick','masonry-clay'],['Material 007','unknown'],['灰色','unknown'],['Concrete C30/37','unknown']];
+const cases=[['现浇混凝土 C30/37','concrete-cast'],['Precast concrete C40/50','concrete-precast'],['Steel section S355','steel-section'],['Timber','timber-solid'],['Wood','timber-solid'],['Australian hardwood timber','timber-solid'],['GL28 Glulam Timber','timber-glulam'],['CLT Timber Panel','timber-clt'],['HRB400 钢筋','rebar'],['钢筋网','rebar-mesh'],['Clay brick','masonry-clay'],['Paint','finish'],['Ceramic tile','finish'],['Material 007','unknown'],['灰色','unknown'],['Concrete C30/37','unknown']];
 for(const [name,id] of cases)assert.equal(M.match({name}).material,id,name);
 assert.equal(M.match({name:'钢材',productType:'steel-tube'}).material,'steel-tube');
 assert.equal(M.match({name:'钢板',productType:'concrete-cast'}).material,'unknown');

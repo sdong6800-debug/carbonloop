@@ -104,11 +104,12 @@ internal sealed class SemanticProfile
         {
             ["concrete"] = new[] { "concrete", "混凝土" }, ["concrete-cast"] = new[] { "cast in situ concrete", "cast in place concrete", "现浇混凝土" },
             ["concrete-precast"] = new[] { "precast concrete", "预制混凝土" }, ["rebar"] = new[] { "rebar", "reinforcing steel", "钢筋" },
-            ["steel-section"] = new[] { "structural steel", "steel section", "型钢", "结构钢" }, ["timber-solid"] = new[] { "solid timber", "wood", "木材" },
-            ["timber-glulam"] = new[] { "glulam", "胶合木" }, ["timber-clt"] = new[] { "clt", "cross laminated timber", "交叉层压木" },
+            ["steel-section"] = new[] { "structural steel", "steel section", "型钢", "结构钢" }, ["timber-solid"] = new[] { "solid timber", "sawn timber", "timber", "wood", "lumber", "实木", "锯材", "木材" },
+            ["timber-glulam"] = new[] { "glulam timber", "glulam", "glue laminated timber", "glued laminated timber", "胶合木" }, ["timber-clt"] = new[] { "clt timber", "timber clt", "clt", "cross laminated timber", "交叉层压木" },
             ["masonry-clay"] = new[] { "clay brick", "brick", "砖" }, ["glass"] = new[] { "glass", "glazing", "玻璃" },
             ["aluminium"] = new[] { "aluminium", "aluminum", "铝" }, ["insulation"] = new[] { "insulation", "保温" },
-            ["gypsum"] = new[] { "gypsum", "gypsum board", "plasterboard", "plaster board", "plaster", "石膏板", "石膏抹灰", "石膏" }
+            ["gypsum"] = new[] { "gypsum", "gypsum board", "plasterboard", "plaster board", "plaster", "石膏板", "石膏抹灰", "石膏" },
+            ["finish"] = new[] { "finish", "paint", "coating", "tile", "ceramic tile", "terrazzo", "flooring", "carpet", "vinyl", "render", "cladding", "plastic", "饰面", "涂料", "瓷砖", "水磨石", "地板", "地毯", "抹灰", "覆层", "塑料" }
         },
         new[] { "annotation", "dimension", "dims", "text", "notes", "grid", "axis", "camera", "light", "标注", "尺寸", "轴网" }
     );

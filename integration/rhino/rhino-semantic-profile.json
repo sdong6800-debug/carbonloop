@@ -1,5 +1,5 @@
 {
-  "version": "carbonloop.rhino.semantic-profile/0.3.3",
+  "version": "carbonloop.rhino.semantic-profile/0.3.4",
   "elementTypes": {
     "finish": ["ext finish", "int finish", "floor finish", "floor finishes", "finish", "finishes", "饰面层", "饰面"],
     "slab": ["slab", "slabs", "floor", "floors", "floor slab", "floor slabs", "deck", "decks", "plate", "plates", "楼板", "板"],
@@ -22,9 +22,9 @@
     "steel-section": ["structural steel", "steel section", "steel beam", "steel column", "型钢", "结构钢"],
     "steel-tube": ["steel tube", "steel hollow section", "hollow structural section", "钢管"],
     "steel-plate": ["steel plate", "钢板"],
-    "timber-solid": ["solid timber", "sawn timber", "wood", "实木", "锯材", "木材"],
-    "timber-glulam": ["glulam", "glue laminated timber", "胶合木"],
-    "timber-clt": ["clt", "cross laminated timber", "交叉层压木"],
+    "timber-solid": ["solid timber", "sawn timber", "timber", "wood", "lumber", "实木", "锯材", "木材"],
+    "timber-glulam": ["glulam timber", "glulam", "glue laminated timber", "glued laminated timber", "胶合木"],
+    "timber-clt": ["clt timber", "timber clt", "clt", "cross laminated timber", "交叉层压木"],
     "masonry-clay": ["clay brick", "brick", "砖", "黏土砖", "粘土砖"],
     "masonry-concrete": ["concrete block", "cmu", "混凝土砌块"],
     "masonry-aac": ["aac", "aerated concrete", "加气混凝土"],
@@ -33,7 +33,7 @@
     "insulation": ["insulation", "保温"],
     "gypsum": ["gypsum", "gypsum board", "plasterboard", "plaster board", "plaster", "石膏板", "石膏抹灰", "石膏"],
     "stone-natural-polished": ["carrara", "marble", "natural stone", "polished stone", "大理石", "天然石材", "抛光石材"],
-    "finish": ["finish", "finishes", "tile", "terrazzo", "flooring", "carpet", "render", "cladding", "饰面", "瓷砖", "水磨石", "地板", "地毯", "抹灰", "覆层"]
+    "finish": ["finish", "finishes", "paint", "coating", "tile", "ceramic tile", "terrazzo", "flooring", "carpet", "vinyl", "render", "cladding", "plastic", "饰面", "涂料", "瓷砖", "水磨石", "地板", "地毯", "抹灰", "覆层", "塑料"]
   },
   "excludeFromCarbonAnalysis": ["annotation", "annotations", "dimension", "dimensions", "dims", "text", "texts", "notes", "grid", "grids", "axis", "axes", "camera", "cameras", "light", "lights", "标注", "尺寸", "轴网"]
 }

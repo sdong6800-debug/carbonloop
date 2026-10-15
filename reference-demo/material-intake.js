@@ -7,10 +7,10 @@
   ['concrete',/通用混凝土|generic concrete/i],['concrete-cast',/现浇混凝土|cast[- ]in[- ](?:situ|place) concrete/i],['concrete-precast',/预制混凝土|precast concrete/i],
   ['rebar-mesh',/钢筋网|reinforcing mesh/i],['rebar',/钢筋|rebar|reinforcing steel/i],
   ['steel-section',/型钢|h型钢|steel section|structural steel section/i],['steel-tube',/钢管|steel tube|steel hollow section/i],['steel-plate',/钢板|steel plate/i],
-  ['timber-solid',/实木|solid timber|sawn timber/i],['timber-glulam',/胶合木|glulam/i],['timber-clt',/交叉层压木|\bCLT\b|cross[- ]laminated timber/i],
+  ['timber-solid',/实木|锯材|木材|solid timber|sawn timber|\btimber\b|\bwood\b|\blumber\b/i],['timber-glulam',/胶合木|glulam|glue[d ]+laminated timber/i],['timber-clt',/交叉层压木|\bCLT\b|cross[- ]laminated timber/i],
   ['masonry-clay',/黏土砖|粘土砖|clay brick/i],['masonry-concrete',/混凝土砌块|concrete block/i],['masonry-aac',/加气混凝土|\bAAC\b|aerated concrete/i],
   ['glass',/玻璃|\bglass\b/i],['aluminium',/铝材|aluminium|aluminum/i],['insulation',/保温材料|insulation/i],['gypsum',/石膏(?:板|抹灰)?|gypsum(?:\s+board)?|plaster(?:\s*board)?/i],
-  ['stone-natural-polished',/carrara|marble|natural stone|polished stone|大理石|天然石材|抛光石材/i],['finish',/饰面材料|finish material/i]
+  ['stone-natural-polished',/carrara|marble|natural stone|polished stone|大理石|天然石材|抛光石材/i],['finish',/饰面材料|finish(?:es| material)?|paint|coating|ceramic tile|\btile\b|terrazzo|flooring|carpet|vinyl|render|cladding|plastic|涂料|瓷砖|水磨石|地板|地毯|抹灰|覆层|塑料/i]
  ];
  const normalize=v=>String(v||'').trim();
  function match(record){
@@ -22,6 +22,10 @@
   const direct=C.materials.find(m=>m.id===product&&m.id!=='unknown');
   let matches=rules.filter(([,re])=>re.test(name)).map(([id])=>id);
   if(matches.includes('rebar-mesh'))matches=matches.filter(id=>id!=='rebar');
+  // A specific engineered-timber name wins over the generic word "timber".
+  // This keeps names such as "GL28 Glulam Timber" and "CLT Timber Panel"
+  // useful instead of turning them into false multi-category conflicts.
+  if(matches.includes('timber-glulam')||matches.includes('timber-clt'))matches=matches.filter(id=>id!=='timber-solid');
   // Rhino's semantic profile may provide the broad "finish" category while
   // the material name is more specific. Prefer an explicit stone name over
   // that broad category; retain conflict handling for unrelated categories.
