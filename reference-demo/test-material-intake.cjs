@@ -3,6 +3,8 @@ const cases=[['现浇混凝土 C30/37','concrete-cast'],['Precast concrete C40/5
 for(const [name,id] of cases)assert.equal(M.match({name}).material,id,name);
 assert.equal(M.match({name:'钢材',productType:'steel-tube'}).material,'steel-tube');
 assert.equal(M.match({name:'钢板',productType:'concrete-cast'}).material,'unknown');
+assert.equal(M.match({name:'Plaster',productType:''}).material,'gypsum');
+assert.equal(M.match({name:'Plaster (1)',productType:''}).material,'gypsum');
 assert.equal(M.match({name:'通用混凝土',appearanceOnly:true}).material,'unknown');
 assert.equal(M.match({name:'混凝土',layers:[{name:'混凝土'},{name:'钢筋'}]}).material,'unknown');
 const raw={id:'project-42',name:'Steel section S355',grade:'S355',origin:'object attribute'};assert.deepEqual(M.match(raw).materialRecord,raw);

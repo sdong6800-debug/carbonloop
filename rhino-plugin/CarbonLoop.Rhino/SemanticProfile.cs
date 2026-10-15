@@ -108,7 +108,7 @@ internal sealed class SemanticProfile
             ["timber-glulam"] = new[] { "glulam", "胶合木" }, ["timber-clt"] = new[] { "clt", "cross laminated timber", "交叉层压木" },
             ["masonry-clay"] = new[] { "clay brick", "brick", "砖" }, ["glass"] = new[] { "glass", "glazing", "玻璃" },
             ["aluminium"] = new[] { "aluminium", "aluminum", "铝" }, ["insulation"] = new[] { "insulation", "保温" },
-            ["gypsum"] = new[] { "gypsum", "plasterboard", "石膏板" }
+            ["gypsum"] = new[] { "gypsum", "gypsum board", "plasterboard", "plaster board", "plaster", "石膏板", "石膏抹灰", "石膏" }
         },
         new[] { "annotation", "dimension", "dims", "text", "notes", "grid", "axis", "camera", "light", "标注", "尺寸", "轴网" }
     );

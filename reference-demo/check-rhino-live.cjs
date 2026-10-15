@@ -32,10 +32,11 @@ function makePayload(transmissionId,objects){return {schemaVersion:'carbonloop.r
   current=makePayload('send-3',[{...floor,material:{id:'glass-1',name:'Clear flat glass',productType:'glass',grade:''}}]);
   await page.evaluate(()=>window.CarbonRhinoLive.poll());await page.waitForFunction(()=>document.querySelector('.entry-badge')?.textContent.includes('1 个对象'));
   assert.match(await page.textContent('#entrySummary'),/已确认 0 \/ 1/,'changed source material must be reviewed again');
-  current=makePayload('send-4',[column]);current.source.documentId='new-building-model.3dm';
+  current=makePayload('send-4',[{...column,material:{id:'rhino-plaster-1',name:'Plaster (1)',productType:'',grade:''}}]);current.source.documentId='new-building-model.3dm';
   await page.evaluate(()=>window.CarbonRhinoLive.poll());await page.waitForFunction(()=>document.querySelector('.entry-badge')?.textContent.includes('1 个对象'));
   assert.equal(await page.locator('#entryRead').isVisible(),true,'a different Rhino document must replace the previous review and start fresh');
   assert.match(await page.textContent('#entryNotice'),/已用新 Rhino 模型替换上一份数据/);
+  await page.click('#entryRead');assert.equal(await page.locator('#entryMaterial').inputValue(),'gypsum','Rhino Plaster (1) should map to the gypsum/plaster proxy instead of unknown');
   assert.deepEqual(errors,[]);
   console.log('PASS Rhino live UI: same-document sync preserves unchanged review, while a new Rhino document replaces the old model and starts fresh.');
  }finally{await browser.close();}

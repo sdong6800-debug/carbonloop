@@ -9,7 +9,7 @@
   ['steel-section',/型钢|h型钢|steel section|structural steel section/i],['steel-tube',/钢管|steel tube|steel hollow section/i],['steel-plate',/钢板|steel plate/i],
   ['timber-solid',/实木|solid timber|sawn timber/i],['timber-glulam',/胶合木|glulam/i],['timber-clt',/交叉层压木|\bCLT\b|cross[- ]laminated timber/i],
   ['masonry-clay',/黏土砖|粘土砖|clay brick/i],['masonry-concrete',/混凝土砌块|concrete block/i],['masonry-aac',/加气混凝土|\bAAC\b|aerated concrete/i],
-  ['glass',/玻璃|\bglass\b/i],['aluminium',/铝材|aluminium|aluminum/i],['insulation',/保温材料|insulation/i],['gypsum',/石膏板|gypsum board/i],
+  ['glass',/玻璃|\bglass\b/i],['aluminium',/铝材|aluminium|aluminum/i],['insulation',/保温材料|insulation/i],['gypsum',/石膏(?:板|抹灰)?|gypsum(?:\s+board)?|plaster(?:\s*board)?/i],
   ['stone-natural-polished',/carrara|marble|natural stone|polished stone|大理石|天然石材|抛光石材/i],['finish',/饰面材料|finish material/i]
  ];
  const normalize=v=>String(v||'').trim();

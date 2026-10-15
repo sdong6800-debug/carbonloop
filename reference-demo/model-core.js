@@ -29,7 +29,7 @@
  Object.assign(stone,{sourceUnit:'m² for a 15 mm plate',sourceMassPerArea:40.5,sourceThickness:.015,conversionNote:'KBOB F328 = 40.5 kg/m²，按 15 mm 厚度换算为 2700 kg/m³；AA328 19.1 与 AB328 0.514 kg CO₂e/m² 分别除以 40.5 kg/m²，换算为当前质量口径。'});
  const mapping={concrete:'01.002','concrete-cast':'01.002','concrete-precast':'01.002',rebar:'06.003','rebar-mesh':'06.003','steel-section':'06.012','steel-tube':'06.012','steel-plate':'06.010','timber-solid':'07.011','timber-glulam':'07.003','timber-clt':'07.020','masonry-clay':'02.001','masonry-aac':'02.006','masonry-concrete':'02.007',glass:'03.006',aluminium:'06.002',gypsum:'03.008','stone-natural-polished':'11.017'};
  const factorFor=id=>factors.find(f=>f.id===mapping[id])||null;
- function factorNote(id){return ({'concrete':'通用、不含钢筋','concrete-cast':'以通用无筋混凝土作早期代理，未匹配强度与配方','concrete-precast':'以通用无筋混凝土作代理，非预制产品 EPD，未体现特定工厂工艺','rebar':'钢筋通用参考，须有独立钢筋数量','rebar-mesh':'钢筋通用代理，未细分焊网加工','steel-section':'裸型钢通用参考，未匹配 S355 牌号与防火涂层','steel-tube':'以裸型钢条目作前期代理；未体现钢管制造、牌号、壁厚和涂层差异','steel-plate':'裸钢板通用参考','timber-solid':'针叶材、窑干刨光参考，树种与工艺待项目确认','timber-glulam':'胶合木通用参考，未匹配 GL28h 产品','timber-clt':'CLT 通用参考，未匹配具体产品','masonry-clay':'瑞士砖材参考密度 900 kg/m³；墙体演示不含砂浆及洞口','masonry-aac':'加气混凝土块通用参考，不含砂浆','masonry-concrete':'水泥砌块通用参考，不含砂浆','glass':'以无镀膜平板玻璃作前期代理；未计中空层、夹胶、镀膜和幕墙框','aluminium':'以裸铝型材作前期代理；未匹配合金、再生含量、表面处理与具体 EPD','gypsum':'以石膏板作前期代理；未计龙骨、饰面和安装损耗','stone-natural-polished':'KBOB 抛光天然石板 15 mm 参考；Carrara 大理石按天然石材早期代理，未匹配具体矿区与产品 EPD。原始每平方米数据已按 40.5 kg/m² 换算为质量口径。'})[id]||'尚无适用计算条目';}
+ function factorNote(id){return ({'concrete':'通用、不含钢筋','concrete-cast':'以通用无筋混凝土作早期代理，未匹配强度与配方','concrete-precast':'以通用无筋混凝土作代理，非预制产品 EPD，未体现特定工厂工艺','rebar':'钢筋通用参考，须有独立钢筋数量','rebar-mesh':'钢筋通用代理，未细分焊网加工','steel-section':'裸型钢通用参考，未匹配 S355 牌号与防火涂层','steel-tube':'以裸型钢条目作前期代理；未体现钢管制造、牌号、壁厚和涂层差异','steel-plate':'裸钢板通用参考','timber-solid':'针叶材、窑干刨光参考，树种与工艺待项目确认','timber-glulam':'胶合木通用参考，未匹配 GL28h 产品','timber-clt':'CLT 通用参考，未匹配具体产品','masonry-clay':'瑞士砖材参考密度 900 kg/m³；墙体演示不含砂浆及洞口','masonry-aac':'加气混凝土块通用参考，不含砂浆','masonry-concrete':'水泥砌块通用参考，不含砂浆','glass':'以无镀膜平板玻璃作前期代理；未计中空层、夹胶、镀膜和幕墙框','aluminium':'以裸铝型材作前期代理；未匹配合金、再生含量、表面处理与具体 EPD','gypsum':'Rhino 的 Plaster / Plasterboard 暂以石膏板条目作前期代理；湿抹灰与板材并非同一产品，需人工确认，且未计龙骨、饰面和安装损耗','stone-natural-polished':'KBOB 抛光天然石板 15 mm 参考；Carrara 大理石按天然石材早期代理，未匹配具体矿区与产品 EPD。原始每平方米数据已按 40.5 kg/m² 换算为质量口径。'})[id]||'尚无适用计算条目';}
  // Classification catalogue is deliberately separate from verified calculation factors.
  const materials=[
   ['concrete','混凝土','建筑混凝土（通用，未细分配方）'],['concrete-cast','混凝土','现浇混凝土'],['concrete-precast','混凝土','预制混凝土'],
@@ -37,7 +37,7 @@
   ['steel-section','结构钢','型钢'],['steel-tube','结构钢','钢管'],['steel-plate','结构钢','钢板'],
   ['timber-solid','木材','实木'],['timber-glulam','木材','胶合木'],['timber-clt','木材','交叉层压木板（CLT）'],
   ['masonry-clay','砌体','黏土砖'],['masonry-concrete','砌体','混凝土砌块'],['masonry-aac','砌体','加气混凝土砌块'],
-  ['glass','围护与装修','玻璃'],['aluminium','围护与装修','铝材'],['insulation','围护与装修','保温材料'],['gypsum','围护与装修','石膏板'],['stone-natural-polished','围护与装修','抛光天然石材（含大理石代理）'],['finish','围护与装修','其他饰面层（待细分）'],
+  ['glass','围护与装修','玻璃'],['aluminium','围护与装修','铝材'],['insulation','围护与装修','保温材料'],['gypsum','围护与装修','石膏制品／抹灰（石膏板代理）'],['stone-natural-polished','围护与装修','抛光天然石材（含大理石代理）'],['finish','围护与装修','其他饰面层（待细分）'],
   ['unknown','待核对','未确定材料']
  ].map(([id,group,name])=>({id,group,name,calculable:!!factorFor(id)}));
  const materialInfo=id=>materials.find(m=>m.id===id)||materials[materials.length-1];

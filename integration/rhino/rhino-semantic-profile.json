@@ -1,5 +1,5 @@
 {
-  "version": "carbonloop.rhino.semantic-profile/0.3.2",
+  "version": "carbonloop.rhino.semantic-profile/0.3.3",
   "elementTypes": {
     "finish": ["ext finish", "int finish", "floor finish", "floor finishes", "finish", "finishes", "饰面层", "饰面"],
     "slab": ["slab", "slabs", "floor", "floors", "floor slab", "floor slabs", "deck", "decks", "plate", "plates", "楼板", "板"],
@@ -31,7 +31,7 @@
     "glass": ["glass", "glazing", "玻璃"],
     "aluminium": ["aluminium", "aluminum", "铝"],
     "insulation": ["insulation", "保温"],
-    "gypsum": ["gypsum", "plasterboard", "石膏板"],
+    "gypsum": ["gypsum", "gypsum board", "plasterboard", "plaster board", "plaster", "石膏板", "石膏抹灰", "石膏"],
     "stone-natural-polished": ["carrara", "marble", "natural stone", "polished stone", "大理石", "天然石材", "抛光石材"],
     "finish": ["finish", "finishes", "tile", "terrazzo", "flooring", "carpet", "render", "cladding", "饰面", "瓷砖", "水磨石", "地板", "地毯", "抹灰", "覆层"]
   },
