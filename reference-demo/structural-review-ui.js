@@ -4,7 +4,11 @@
  panel.innerHTML='<div class="feedback-heading"><b>这次修改能用吗？</b><span id="structuralState">待核实</span></div><p id="structuralSummary" aria-live="polite"></p><div id="structuralFacts" class="change-facts"></div><div id="structuralRisks" class="change-facts" aria-live="polite"></div><p id="structuralAIStatus" role="status"></p><label class="structural-consent"><input id="structuralAuto" type="checkbox" disabled>修改后自动请 AI 分析（发送构件与项目资料，消耗 API 额度）</label><div class="feedback-actions"><button id="structuralAsk" class="outline">分析这次修改</button><button id="structuralReconnect" class="text-button">检查连接</button></div><div id="structuralAnswer" hidden><b>AI 对本次修改的建议 · 非完整结构验算</b><p id="structuralReason"></p><b>下一步</b><p id="structuralNextStep"></p><b>本次使用的 RAG 依据</b><div id="structuralCitations" class="rag-evidence"></div></div><details id="structuralDetails"><summary>检查内容与依据</summary><p id="structuralRuleSummary"></p><div id="structuralRuleMatches"></div><div id="sectionCapacity"><b>AS 3600:2018 · 截面抗弯工具</b><p id="sectionStatus">需接入结构资料：强度、配筋和对应改动的设计内力。</p><label>接入已有工程资料 <input id="sectionFile" type="file" accept=".json,application/json"></label><button id="sectionRun" type="button" class="outline">计算截面抗弯</button><div id="sectionResult"></div><p>此接口接收结构工具导出的资料，不从建筑外形猜测配筋。只计算选定板带的正弯矩抗弯，未检查冲切、挠度和支承构件；不能代替完整结构核验。</p></div><details id="modelDataHelp"><summary>接入真实模型后，哪些信息能自动得到？</summary><p><b>模型已有的，可以读取：</b>构件位置、实际几何，以及已填写的材料和钢筋信息。普通 Rhino 几何里不一定有钢筋或材料强度。</p><p><b>模型没有的，不能凭外形补出：</b>钢筋怎么布置、楼面使用荷载、梁板柱怎么连接与支承。需要项目资料或确认后的设计假设。</p><p><b>需要计算的：</b>修改后梁板柱承受多大作用、会变形多少、需要多少钢筋，要由结构分析与设计工具计算。当前只接通特定截面的抗弯工具，尚未接通整个模型的结构分析。</p><p>本页当前仍使用示例模型，尚未连接 Rhino / Revit。截图只辅助理解位置和意图，不作为配筋、荷载或精确尺寸的来源。</p></details><ul id="structuralChecks"></ul><p id="structuralBasisIntro">澳洲规范参考 · 州、建筑类别与适用版本待确认。</p><div id="structuralSources"></div><p>程序计算碳排与变化风险；RAG 只检索本次相关的公开摘要和项目规则；工程资料齐全时可运行截面抗弯工具。整体结构求解、冲切和变形等检查尚未接通。</p></details>';
  document.querySelector('.center-column').prepend(panel);
  let sectionInput=null,sectionResult=null,sectionController=null,sectionTimer=null;
- const AUTO_PREF_KEY='carbonloop-structural-auto-v1';
+ // A successful local AI connection opts into automatic change review by
+ // default. The user can still turn it off, and that explicit choice is
+ // remembered. A new preference key intentionally replaces the older
+ // opt-in-only behaviour, including on alternate Rhino web ports.
+ const AUTO_PREF_KEY='carbonloop-structural-auto-v2';
  let configured=false,provider='模型服务',fingerprint='',controller=null,timer=null,report=null,body=null,latest=null,message='';
  const fmt=n=>Number.isFinite(n)?n.toLocaleString('zh-CN',{maximumFractionDigits:2}):'—';
  const emit=()=>document.dispatchEvent(new Event('carbon-structural-feedback'));
@@ -16,7 +20,7 @@
  function paintCitations(data,ids){const box=$('structuralCitations');box.replaceChildren();const chunks=data?.report?.rag?.retrievedEvidence||[],used=new Set(ids||[]);for(const chunk of chunks.filter(x=>used.has(x.id))){const row=document.createElement('div'),title=chunk.source_url?document.createElement('a'):document.createElement('span'),meta=document.createElement('small');row.className='rag-evidence-row';title.textContent=chunk.source_title+' · '+chunk.locator;if(chunk.source_url){title.href=chunk.source_url;title.target='_blank';title.rel='noopener';}meta.textContent=(chunk.authority==='normative_reference'?'公开规范摘要':'项目规则')+' · '+(chunk.project_applicability==='selected_project_context'?'项目条件已选定':'项目版本仍待确认');row.append(title,meta);box.append(row);}if(!box.childElementCount){const p=document.createElement('p');p.textContent='本次没有可显示的引用，回答未采用。';box.append(p);}}
  function buttons(){$('structuralAsk').disabled=!configured||!report?.scope_supported||!!controller;$('structuralAuto').disabled=!configured;}
  function cancel(){controller?.abort();controller=null;sectionController?.abort();sectionController=null;clearTimeout(timer);clearTimeout(sectionTimer);buttons();}
- function autoPreference(){try{return localStorage.getItem(AUTO_PREF_KEY)==='on';}catch{return false;}}
+ function autoPreference(){try{return localStorage.getItem(AUTO_PREF_KEY)!=='off';}catch{return true;}}
  function saveAutoPreference(enabled){try{localStorage.setItem(AUTO_PREF_KEY,enabled?'on':'off');}catch{}}
  function scheduleAuto(){
   clearTimeout(timer);

@@ -6,8 +6,8 @@
  $('editorSize').append(card);
  // Move the existing consent control: one authorization, no duplicate checkbox.
  const consent=$('structuralAuto').closest('label');
- consent.lastChild.textContent='修改后自动分析（开启一次，之后自动记住）';
- consent.title='开启一次后会记住设置。每次停止修改 1.5 秒后，发送当前构件、修改内容及项目资料给已连接的大模型；取消勾选即停止自动分析。';
+ consent.lastChild.textContent='AI 自动分析（连接成功后默认开启）';
+ consent.title='AI 连接成功后默认开启。每次停止修改 1.5 秒后，发送当前构件、修改内容及项目资料给已连接的大模型；取消勾选即停止并记住你的选择。';
  card.append(consent);
  const disclosure=document.createElement('small');disclosure.textContent='停止修改 1.5 秒后调用一次 · 发送修改资料给 AI · 消耗 API 额度';consent.append(document.createElement('br'),disclosure);
  $('editReviewAsk').title='发送本次修改给已连接的大模型，消耗 API 额度';
