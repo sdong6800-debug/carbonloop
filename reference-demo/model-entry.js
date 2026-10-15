@@ -4,7 +4,7 @@
  const PREVIEW_LIMIT=180,TABLE_LIMIT=60;
  const types={slab:'楼板',beam:'梁',column:'柱',wall:'墙',foundation:'基础',roof:'屋面',glazing:'玻璃/幕墙',mullion:'幕墙框',door:'门',stair:'楼梯',other:'其他',unknown:'未识别'};
  let source=M.sample(),intakeStatus=M.contractStatus?.(),sourceMode='demo';const remembered=new Map();
- let rows=[],scope='floor',floor='1F',chosen=new Set(),selected='S01',group='all',scanned=false,readOnly=false,onDone,onCancel,selectDominantRhinoGroup=false;
+ let rows=[],scope='floor',floor='1F',chosen=new Set(),selected='S01',group='all',scanned=false,readOnly=false,onDone,onCancel;
  const eligibleSource=()=>source.filter(e=>e.analysisEligible!==false);
  const excludedSource=()=>source.filter(e=>e.analysisEligible===false);
  const scopeRows=()=>eligibleSource().filter(e=>scope==='all'||(scope==='floor'?e.floor===floor:chosen.has(e.id)));
@@ -96,11 +96,6 @@
  $('entrySourceMaterial').before(provenance);provenance.append($('entrySourceMaterial'),$('entryMatchBasis'));
  $('entryObjectTitle').parentElement.querySelector('p.eyebrow').hidden=true;
  function peers(r){return rows.filter(e=>e.sourceType===r.sourceType&&sourceKey(e)===sourceKey(r));}
- function dominantPeerGroup(){
-  const groups=new Map();
-  for(const row of rows){const key=matchKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);}
-  return [...groups.values()].sort((a,b)=>b.length-a.length)[0]||[];
- }
  function materialGroups(){
   const container=$('entryMaterialGroups');container.replaceChildren();
   const keys=[...new Set(rows.map(matchKey))];
@@ -212,7 +207,7 @@
   if(!list.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=3;td.className='entry-empty';td.textContent='这一组没有构件。可切换“全部”查看。';tr.append(td);$('entryRows').append(tr);}
   const n=rows.filter(confirmed).length,ready=rows.filter(calculable).length,missing=rows.length-ready;
   materialGroups();
-  $('entryAutoSummary').textContent=`已读取 ${source.length} 个 Rhino 对象；自动排除 ${excludedSource().length} 个标注/辅助对象。其余 ${rows.length} 个中，${rows.filter(r=>!uncertain(r)).length} 个已匹配，${rows.filter(uncertain).length} 个按同类分组待核对。`;
+  $('entryAutoSummary').textContent=`已读取 ${source.length} 个 Rhino 对象；自动排除 ${excludedSource().length} 个标注/辅助对象。当前范围 ${rows.length} 个：${rows.filter(r=>!uncertain(r)).length} 个的构件类型与材料均已识别，可直接批量确认；${rows.filter(uncertain).length} 个仍需核对。`;
   $('entrySummary').textContent=`${scopeName()} · 已载入 ${rows.length} 个 · 已确认 ${n} / ${rows.length}`;
   $('entryRangeLabel').textContent=`本次 ${rows.length} / ${source.length} 个 · ${scopeName()}`;
   $('entryProgress').textContent=missing?`已确认 ${n}/${rows.length} · 可计算 ${ready} 个`:`已确认 ${n} 个构件`;
@@ -254,8 +249,10 @@
  }
  function rangeChanged(){if(scanned)refreshRange();else{setup();syncScopeControls();}}
  $('entryRead').addEventListener('click',()=>{refreshRange();if(!rows.length)return;objects.open=false;
-  if(selectDominantRhinoGroup){const dominant=dominantPeerGroup();if(dominant.length){selected=dominant[0].id;group='match:'+matchKey(dominant[0]);$('entryApplySimilar').checked=dominant.length>1;}selectDominantRhinoGroup=false;}
-  else $('entryApplySimilar').checked=false;
+  // Start with the complete intake scope. Individual material cards still
+  // provide group-specific confirmation, but the primary action must never
+  // silently shrink to the largest material group.
+  group='all';$('entryApplySimilar').checked=false;
   review();
  });
  $('entryFloorSelect').addEventListener('change',()=>{floor=$('entryFloorSelect').value;rangeChanged();});
@@ -294,7 +291,7 @@
  $('entryPartial').addEventListener('change',render);
  $('entryCancel').addEventListener('click',()=>{box.hidden=true;onCancel?.();});
   $('entryContinue').addEventListener('click',()=>{if(readOnly){box.hidden=true;onCancel?.();return;}if($('entryContinue').disabled)return;const data=metadata(),elements=rows.map(r=>{const e={};for(const key of ['id','name','type','typeInference','layer','floor','x','y','z','l','w','h','geometryBasis','previewAdjusted','sourceDimensions','quantityRequired','material','materialRecord','sourceMaterial','sourceMaterialId','matchBasis','quantity'])e[key]=r[key];if(r.typeEdited)e.name=types[r.type]+' '+r.id;e.material=confirmed(r)?r.material:'unknown';return e;});box.hidden=true;onDone(elements,data);});
-  window.ModelEntry={acceptRhino(payload){const normalized=R.normalize(payload);if(!normalized.valid)return normalized;const previousRows=new Map(rows.map(row=>[row.id,row])),hadReview=scanned;source=C.clone(normalized.objects);intakeStatus=normalized;sourceMode='rhino';remembered.clear();for(const item of source.filter(e=>e.analysisEligible!==false)){const row=preserveReview(prepareRow(item),previousRows.get(item.id));remembered.set(row.id,row);}chosen=new Set(source.filter(e=>e.analysisEligible!==false).map(e=>e.id));scope=normalized.metadata.selectionMode==='floor'?'floor':'all';floor=source.find(e=>e.analysisEligible!==false)?.floor||'待确认';rows=hadReview?scopeRows().map(e=>remembered.get(e.id)||prepareRow(e)):[];group='all';selected=rows.some(e=>e.id===selected)?selected:(source.find(e=>e.analysisEligible!==false)?.id||'');selectDominantRhinoGroup=!hadReview;scanned=hadReview;$('entryRead').hidden=hadReview;$('entrySetup').hidden=false;$('entryReview').hidden=!hadReview;$('entryContinue').hidden=!hadReview;selectionList();floorList();sourceUI();if(!box.hidden){if(hadReview)review();else{setup();syncScopeControls();}document.querySelectorAll('[name="entryScope"]').forEach(el=>el.checked=el.value===scope);}$('entryNotice').textContent=hadReview?`Rhino 已自动同步；保留 ${rows.filter(confirmed).length} 个未变化构件的核验，只需检查新增或已变化项。`:`已接收 Rhino 的 ${source.length} 个对象；已自动排除 ${source.filter(e=>e.analysisEligible===false).length} 个标注/辅助对象，请核对其余分组后计算。`;document.dispatchEvent(new CustomEvent('carbon-rhino-intake-ready',{detail:{count:source.length,metadata:normalized.metadata,warnings:normalized.warnings,preservedReview:hadReview}}));return normalized;},open(options){onDone=options.onDone;onCancel=options.onCancel;readOnly=!!options.readOnly;box.hidden=false;$('entryReadonly').hidden=!readOnly;$('entryNotice').textContent='';
+  window.ModelEntry={acceptRhino(payload){const normalized=R.normalize(payload);if(!normalized.valid)return normalized;const previousRows=new Map(rows.map(row=>[row.id,row])),hadReview=scanned;source=C.clone(normalized.objects);intakeStatus=normalized;sourceMode='rhino';remembered.clear();for(const item of source.filter(e=>e.analysisEligible!==false)){const row=preserveReview(prepareRow(item),previousRows.get(item.id));remembered.set(row.id,row);}chosen=new Set(source.filter(e=>e.analysisEligible!==false).map(e=>e.id));scope=normalized.metadata.selectionMode==='floor'?'floor':'all';floor=source.find(e=>e.analysisEligible!==false)?.floor||'待确认';rows=hadReview?scopeRows().map(e=>remembered.get(e.id)||prepareRow(e)):[];group='all';selected=rows.some(e=>e.id===selected)?selected:(source.find(e=>e.analysisEligible!==false)?.id||'');scanned=hadReview;$('entryRead').hidden=hadReview;$('entrySetup').hidden=false;$('entryReview').hidden=!hadReview;$('entryContinue').hidden=!hadReview;selectionList();floorList();sourceUI();if(!box.hidden){if(hadReview)review();else{setup();syncScopeControls();}document.querySelectorAll('[name="entryScope"]').forEach(el=>el.checked=el.value===scope);}$('entryNotice').textContent=hadReview?`Rhino 已自动同步；保留 ${rows.filter(confirmed).length} 个未变化构件的核验，只需检查新增或已变化项。`:`已接收 Rhino 的 ${source.length} 个对象；已自动排除 ${source.filter(e=>e.analysisEligible===false).length} 个标注/辅助对象，请核对其余分组后计算。`;document.dispatchEvent(new CustomEvent('carbon-rhino-intake-ready',{detail:{count:source.length,metadata:normalized.metadata,warnings:normalized.warnings,preservedReview:hadReview}}));return normalized;},open(options){onDone=options.onDone;onCancel=options.onCancel;readOnly=!!options.readOnly;box.hidden=false;$('entryReadonly').hidden=!readOnly;$('entryNotice').textContent='';
   if(options.previous){remembered.clear();rows=C.clone(options.previous.records);scope=options.previous.scope;floor=options.previous.floor||'1F';chosen=new Set(options.previous.selected_ids);group='all';selected=rows[0]?.id||'';$('entryPartial').checked=!!options.previous.partial_acknowledged;review();}
   else if(sourceMode==='rhino'&&scanned&&rows.length){$('entryReadonly').hidden=true;readOnly=false;$('entryPartial').checked=false;review();}
   else{remembered.clear();rows=[];$('entryRead').hidden=false;scanned=false;$('entryIsolate').checked=false;$('entrySetup').hidden=false;$('entryReview').hidden=true;$('entryContinue').hidden=true;$('entryBack').hidden=true;$('entryPartialWrap').hidden=true;$('entryPartial').checked=false;
