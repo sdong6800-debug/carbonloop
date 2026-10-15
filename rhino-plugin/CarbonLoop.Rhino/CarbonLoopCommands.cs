@@ -67,7 +67,7 @@ public sealed class CarbonLoopSendCommand : Command
             RhinoApp.WriteLine(
                 $"CarbonLoop：已发送 {export.IncludedCount} 个对象；自动识别 {export.RecognizedCount} 个，待核对 {export.UnknownCount} 个，辅助对象 {export.ExcludedCount} 个。后续图层、构件和材质修改会自动同步。"
             );
-            plugin.OpenWorkbench(out _);
+            plugin.OpenWorkbench(out _, published.Revision);
             return Result.Success;
         }
         catch (Exception exception)

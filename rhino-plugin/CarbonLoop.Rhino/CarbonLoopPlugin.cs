@@ -113,13 +113,21 @@ public sealed class CarbonLoopPlugin : PlugIn
     public void RememberSyncScope(RhinoDoc doc, string mode, string? floor, IReadOnlyList<RhinoObject> objects) =>
         _sync?.Remember(doc, mode, floor, objects);
 
-    public bool OpenWorkbench(out string message)
+    public bool OpenWorkbench(out string message, int? revision = null)
     {
         if (!EnsureHost(out message))
             return false;
         try
         {
-            Process.Start(new ProcessStartInfo(LocalWebHost.WorkbenchUrl) { UseShellExecute = true });
+            // A stable URL can make the browser merely focus an already-open,
+            // stale CarbonLoop tab instead of loading the newly published Rhino
+            // payload and current web assets. Give every Rhino launch a fresh
+            // navigation URL; the local host ignores the query when serving the
+            // file, while the browser treats it as a new document navigation.
+            var navigationToken = revision?.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var url = $"{LocalWebHost.WorkbenchUrl}?source=rhino&revision={navigationToken}&ui=20261015-rc5";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             message = "CarbonLoop 工作台已打开。";
             return true;
         }
