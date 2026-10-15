@@ -17,12 +17,14 @@ const testUrl=process.env.CARBONLOOP_TEST_URL||'http://127.0.0.1:8513/demo.html'
   const recognition=(await page.textContent('#entryRecognition')).trim();
   const similarCount=(await page.textContent('#entrySimilarCount')).trim();
   const groupButton=(await page.textContent('#entryConfirmOne')).trim();
+  const detailAllButton=(await page.textContent('#entryConfirmAllDetail')).trim();
   const match=button.match(/^一键确认全部已识别构件（(\d+)）$/);
   assert.ok(match&&Number(match[1])>1,'real Rhino review must default to all recognized objects, not one material group');
   assert.match(recognition,/构件：楼地面饰面/);
   assert.match(recognition,/材料：抛光天然石材/);
-  assert.equal(similarCount,'（本组 365 个 / 本次模型共 659 个）');
-  assert.equal(groupButton,'确认当前材料组的 365 个');
+  assert.equal(similarCount,'');
+  assert.equal(groupButton,'仅确认当前构件');
+  assert.equal(detailAllButton,button.replace(/^一键/,''));
   await page.screenshot({path:'.test-exports/current-rhino-review.png',fullPage:false});
   await page.click('#entryConfirmGroup');
   await page.check('#entryPartial');
@@ -36,7 +38,7 @@ const testUrl=process.env.CARBONLOOP_TEST_URL||'http://127.0.0.1:8513/demo.html'
   const stoneRow=page.locator('#reportComponents tr').filter({hasText:'抛光天然石材'}).first();
   assert.match((await stoneRow.textContent()).replace(/\s+/g,' '),/m² · 15 mm 参考/);
   assert.notEqual((await page.textContent('#total')).trim(),'242.4');
-  console.log(JSON.stringify({connected,recognition,button,similarCount,groupButton,coverage,total:(await page.textContent('#total')).trim(),stage},null,2));
+  console.log(JSON.stringify({connected,recognition,button,detailAllButton,groupButton,coverage,total:(await page.textContent('#total')).trim(),stage},null,2));
   console.log('PASS current Rhino intake defaults to all recognized objects, labels ext.Finish as floor finish, and uses the 15 mm area basis.');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

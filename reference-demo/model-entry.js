@@ -88,10 +88,11 @@
  const typeLabel=box.querySelector('label[for="entryType"]'),materialLabel=box.querySelector('label[for="entryMaterial"]'),oldHelp=$('entryMaterialBasis').nextElementSibling;
  typeLabel.before(corrections);for(const el of [typeLabel,$('entryType'),$('entryTypeBasis'),materialLabel,$('entryMaterial'),$('entryMaterialBasis')])corrections.append(el);
  oldHelp.textContent='混凝土与钢筋分别记录；未建模的钢筋不会自动补出数量。没有计算数据的材料保留分类，不当作零排放。';
- corrections.append(Object.assign(document.createElement('label'),{className:'entry-apply-similar',innerHTML:'<input id="entryApplySimilar" type="checkbox">同时应用到当前材料组 <span id="entrySimilarCount"></span>'}));
+ corrections.append(Object.assign(document.createElement('label'),{className:'entry-apply-similar',innerHTML:'<input id="entryApplySimilar" type="checkbox">批量应用到当前材料组（可选） <span id="entrySimilarCount"></span>'}));
+ const confirmAllDetail=document.createElement('button');confirmAllDetail.id='entryConfirmAllDetail';confirmAllDetail.className='entry-confirm-all';
  $('entryConfirmHelp').textContent='这里只核对分类与设计意图；计算数据是否齐全由系统另行检查，不代表结构安全。';
  // Keep editable fields above optional provenance; never bury the correction controls.
- $('entryObjectTitle').after(corrections);corrections.after($('entryConfirmOne'));
+ $('entryObjectTitle').after(corrections);corrections.after(confirmAllDetail,$('entryConfirmOne'));
  const provenance=document.createElement('details');provenance.className='entry-provenance';provenance.innerHTML='<summary>原始材料与匹配依据</summary>';
  $('entrySourceMaterial').before(provenance);provenance.append($('entrySourceMaterial'),$('entryMatchBasis'));
  $('entryObjectTitle').parentElement.querySelector('p.eyebrow').hidden=true;
@@ -102,7 +103,7 @@
   for(const key of keys){const members=rows.filter(r=>matchKey(r)===key),r=members[0],n=members.filter(confirmed).length;
    const card=document.createElement('div');card.className='entry-material-card';card.dataset.materialGroup=key;
    const view=document.createElement('button');view.className='entry-material-view';view.dataset.match=key;view.setAttribute('aria-pressed',group==='match:'+key);
-   const title=document.createElement('strong'),meta=document.createElement('span'),layerLeaf=(r.layer||'').split('::').pop();title.textContent=`构件：${types[r.type]}${layerLeaf?' · '+layerLeaf:''}`;meta.textContent=`${members.length} 个 · ${n===members.length?'已核验':`待核验 ${members.length-n} 个`}`;view.append(title,meta);view.addEventListener('click',()=>{group='match:'+key;objects.open=true;render();$('entryApplySimilar').checked=members.length>1;detail();});
+   const title=document.createElement('strong'),meta=document.createElement('span'),layerLeaf=(r.layer||'').split('::').pop();title.textContent=`构件：${types[r.type]}${layerLeaf?' · '+layerLeaf:''}`;meta.textContent=`${members.length} 个 · ${n===members.length?'已核验':`待核验 ${members.length-n} 个`}`;view.append(title,meta);view.addEventListener('click',()=>{group='match:'+key;objects.open=true;$('entryApplySimilar').checked=false;render();});
    const mapping=document.createElement('p');mapping.className='entry-card-mapping';mapping.textContent=`材料：${r.sourceMaterial||'模型未提供'} → ${r.materialEdited?'已修正为':'识别为'} ${C.materialInfo(r.material).name}`;
    const status=document.createElement('p');status.textContent=uncertain(r)?'信息缺失，请定位后核对':C.element(r).error||('KBOB '+C.factorFor(r.material).id+' · 瑞士参考因子已接通');
    const approve=document.createElement('button');approve.className='outline';approve.dataset.confirmMatch=key;approve.textContent=n===members.length?'已确认':`分类正确，确认 ${members.length} 个`;approve.disabled=readOnly||uncertain(r)||n===members.length;approve.addEventListener('click',()=>confirm(members));
@@ -157,7 +158,7 @@
   // the row click had enabled it, so the UI fell back to "confirm 1 object"
   // even when hundreds of matching Rhino objects were visible in the list.
   // Keep a manual uncheck while the same object remains selected.
-  if(corrections.dataset.selected!==r.id){corrections.open=true;$('entryApplySimilar').checked=peers(r).length>1;corrections.dataset.selected=r.id;}
+  if(corrections.dataset.selected!==r.id){corrections.open=true;$('entryApplySimilar').checked=false;corrections.dataset.selected=r.id;}
   $('entryObjectTitle').textContent=`${types[r.type]} · ${r.name||r.id}`;
   $('entryGeometry').replaceChildren();
   const displayDimensions=r.previewAdjusted&&r.sourceDimensions?`${r.sourceDimensions.map(v=>Number(v).toFixed(3)).join(' × ')} m（零厚度方向仅补作预览）`:`${r.l} × ${r.w} × ${r.h} m`;
@@ -169,17 +170,20 @@
   $('entryMatchBasis').textContent=r.materialEdited?'你已修正目录分类；上方原始材料记录不变，可对照检查。':r.matchBasis;
   $('entryCalculationState').hidden=!C.element(r).error;
   $('entryCalculationState').textContent=C.element(r).error||('已接入 KBOB '+C.factorFor(r.material).id+' · '+C.factorNote(r.material)+'。仅生产＋处置，非全生命周期。');
-  $('entrySimilarCount').textContent=`（本组 ${peers(r).length} 个 / 本次模型共 ${rows.length} 个）`;
+  $('entrySimilarCount').textContent=$('entryApplySimilar').checked?`（当前组 ${peers(r).length} 个）`:'';
   $('entryApplySimilar').disabled=readOnly||peers(r).length<2;
   $('entryTypeState').textContent=r.typeConfirmed?'已人工确认':'待确认';$('entryMaterialState').textContent=r.materialConfirmed?'已人工确认':'待确认';
   $('entryTypeBasis').textContent=r.typeEdited?'依据：你在本次核对中修改的分类。':r.typeInference?`${r.typeInference.basis} 置信度 ${Math.round((r.typeInference.confidence||0)*100)}%。`:'依据：示例预设分类。';
   $('entryMaterialBasis').textContent=r.materialEdited?'依据：你修正的材料分类；不代表已取得计算因子或材料性能。':r.matchBasis;
   $('entryType').disabled=readOnly;$('entryMaterial').disabled=readOnly;
   const similar=$('entryApplySimilar').checked?peers(r):[r],confirmable=similar.filter(item=>!confirmed(item)&&!uncertain(item));
-  $('entryConfirmOne').textContent=$('entryApplySimilar').checked&&similar.length>1?`确认当前材料组的 ${similar.length} 个`:'确认当前构件';
+  const allConfirmable=rows.filter(item=>!confirmed(item)&&!uncertain(item));
+  confirmAllDetail.textContent=`确认全部已识别构件（${allConfirmable.length}）`;
+  confirmAllDetail.disabled=readOnly||!allConfirmable.length;
+  $('entryConfirmOne').textContent=$('entryApplySimilar').checked&&similar.length>1?`仅确认当前材料组（${similar.length}）`:'仅确认当前构件';
   $('entryConfirmHelp').textContent=$('entryApplySimilar').checked&&similar.length>1
-   ?`这里只确认当前材料组 ${similar.length} 个，不是本次模型全部 ${rows.length} 个。要批量确认全部已识别构件，请使用页面上方的“一键确认全部已识别构件”。`
-   :'这里只核对当前构件的分类与材料；计算数据是否齐全由系统另行检查，不代表结构安全。';
+   ?`主按钮确认整个模型中全部已识别构件；下面的次要按钮只用于当前材料组 ${similar.length} 个。`
+   :`主按钮确认整个模型中全部已识别构件；下面的次要按钮只确认当前构件。`;
   $('entryConfirmOne').disabled=readOnly||!confirmable.length;
  }
  function render(){
@@ -196,11 +200,11 @@
    const identity=document.createElement('td'),material=document.createElement('td'),actions=document.createElement('td');
    const locate=document.createElement('button');locate.className='entry-locate';locate.dataset.locate=r.id;locate.textContent=`${types[r.type]} · ${r.name||r.id}`;locate.setAttribute('aria-pressed',r.id===selected);
    const location=document.createElement('small');location.textContent=`${r.floor||'楼层待确认'} · ${(r.layer||'图层待确认').split('::').slice(-2).join(' / ')}`;
-   const focus=()=>{selected=r.id;$('entryApplySimilar').checked=peers(r).length>1;render();$('entryRows').querySelector(`[data-locate="${r.id}"]`)?.focus({preventScroll:true});};locate.addEventListener('click',event=>{event.stopPropagation();focus();});tr.addEventListener('click',focus);identity.append(locate,location);
+   const focus=()=>{selected=r.id;$('entryApplySimilar').checked=false;render();$('entryRows').querySelector(`[data-locate="${r.id}"]`)?.focus({preventScroll:true});};locate.addEventListener('click',event=>{event.stopPropagation();focus();});tr.addEventListener('click',focus);identity.append(locate,location);
    const raw=document.createElement('strong'),mapped=document.createElement('span'),grade=document.createElement('small');raw.textContent=r.sourceMaterial;mapped.textContent=`→ ${C.materialInfo(r.material).name}`;grade.textContent=r.materialRecord?.grade?`原始牌号：${r.materialRecord.grade}`:'原模型未提供牌号';material.append(raw,mapped,grade);
    const choose=document.createElement('select');choose.dataset.rowMaterial=r.id;choose.setAttribute('aria-label',r.floor+' '+r.id+' 材料类别（可修改）');materialOptions(choose);choose.value=r.material;choose.disabled=readOnly;
    choose.addEventListener('click',event=>event.stopPropagation());
-   choose.addEventListener('focus',()=>{selected=r.id;$('entryApplySimilar').checked=peers(r).length>1;detail();draw();$('entrySelectedLabel').textContent=r.floor+' · '+types[r.type]+' '+r.id;document.querySelectorAll('.entry-row').forEach(row=>row.dataset.selected=String(row.dataset.row===r.id));});
+   choose.addEventListener('focus',()=>{selected=r.id;$('entryApplySimilar').checked=false;detail();draw();$('entrySelectedLabel').textContent=r.floor+' · '+types[r.type]+' '+r.id;document.querySelectorAll('.entry-row').forEach(row=>row.dataset.selected=String(row.dataset.row===r.id));});
    choose.addEventListener('change',()=>{selected=r.id;amend(r,'material',choose.value,false);$('entryRows').querySelector('[data-row-material="'+r.id+'"]')?.focus({preventScroll:true});});
    material.append(choose);
    const status=document.createElement('span');status.className='entry-row-status';status.textContent=uncertain(r)?'未匹配':confirmed(r)?'已确认':'待核验';
@@ -275,12 +279,13 @@
  }
  function pick(event){const g=event.target.closest('[data-entry-id]');if(!g)return;const id=g.dataset.entryId;
   if(scope==='selection'&&(!scanned||rangePanel.open)&&!readOnly){chosen.has(id)?chosen.delete(id):chosen.add(id);$('entrySelections').querySelector('[data-pick="'+id+'"]').checked=chosen.has(id);rangeChanged();}
-  else if(scanned){if(!rows.some(r=>r.id===id))return;group='all';selected=id;$('entryApplySimilar').checked=peers(rows.find(r=>r.id===id)).length>1;render();$('entryRows').querySelector('[data-row="'+id+'"]')?.scrollIntoView({block:'nearest'});}
+  else if(scanned){if(!rows.some(r=>r.id===id))return;group='all';selected=id;$('entryApplySimilar').checked=false;render();$('entryRows').querySelector('[data-row="'+id+'"]')?.scrollIntoView({block:'nearest'});}
   else{selected=id;}
   $('entryModel').querySelector('[data-entry-id="'+id+'"]')?.focus({preventScroll:true});
  }
  $('entryModel').addEventListener('click',pick);$('entryModel').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(e);}});
  $('entryConfirmOne').addEventListener('click',()=>{const current=rows.find(r=>r.id===selected);confirm(current&&$('entryApplySimilar').checked?peers(current):current?[current]:[]);});
+ confirmAllDetail.addEventListener('click',()=>confirm(rows.filter(item=>!confirmed(item)&&!uncertain(item))));
  $('entryConfirmGroup').addEventListener('click',()=>confirm(visible()));
  $('entryApplySimilar').addEventListener('change',detail);
  function amend(r,key,value,bulk){
