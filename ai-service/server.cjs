@@ -50,13 +50,20 @@ async function explainCarbon(body,config,fetcher=fetch){
  return {mode:'live_ai',provider:config.provider==='deepseek'?'DeepSeek':'OpenAI',model:config.model,generatedAt:new Date().toISOString(),answer,input};
 }
 function envConfig(){const provider=process.env.CARBONLOOP_AI_PROVIDER||'openai';return {provider,key:provider==='deepseek'?process.env.DEEPSEEK_API_KEY:process.env.OPENAI_API_KEY,model:provider==='deepseek'?process.env.DEEPSEEK_MODEL:process.env.OPENAI_MODEL};}
+function isLoopbackPageOrigin(value){
+ if(!value)return true;
+ try{const url=new URL(value),port=Number(url.port);return url.protocol==='http:'&&['127.0.0.1','localhost'].includes(url.hostname)&&Number.isInteger(port)&&port>=1024&&port<=65535;}catch{return false;}
+}
 function createServer(config=envConfig(),fetcher){
  let busy=false,times=[],networkVerified=false;
  return http.createServer(async(req,res)=>{
-  const origin=req.headers.origin,allowed=new Set(['http://127.0.0.1:8513','http://localhost:8513']);
+  const origin=req.headers.origin;
   const send=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};
   if(!/^127\.0\.0\.1:\d+$/.test(req.headers.host||'')&&!/^localhost:\d+$/.test(req.headers.host||''))return send(403,{error:'仅允许本机访问。'});
-  if(origin&&!allowed.has(origin))return send(403,{error:'来源不允许。'});
+  // Rhino may move the workbench from 8513 to 8613/8713 when another Rhino
+  // process already owns the default port. Accept only HTTP loopback pages,
+  // but do not couple the AI bridge to one Rhino instance's exact port.
+  if(!isLoopbackPageOrigin(origin))return send(403,{error:'来源不允许。'});
   if(origin)res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');
   if(req.method==='OPTIONS'){res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, X-CarbonLoop');res.writeHead(204);return res.end();}
   if(req.method==='GET'&&req.url==='/health')return send(200,{service:'carbonloop-ai',changeReviewVersion:5,carbonExplanationVersion:1,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:structuralKnowledge.version,solutionVersion:1,solutionImagesVersion:1,sectionEngineAvailable:sectionEngine.available(),configured:!!(config.key&&config.model&&['openai','deepseek'].includes(config.provider||'openai')),model:config.model||null,provider:config.provider==='deepseek'?'DeepSeek':'OpenAI',mode:'loopback_only',networkVerified});
@@ -80,4 +87,4 @@ function privateConfig(raw){
 }
 async function readPrivateConfig(stream){let raw='';for await(const chunk of stream){raw+=chunk.toString('utf8');if(raw.length>4096)throw Error('Invalid private configuration');}return privateConfig(raw);}
 if(require.main===module){(async()=>{const config=process.argv.includes('--config-stdin')?await readPrivateConfig(process.stdin):envConfig(),server=createServer(config),requestedPort=Number(process.env.CARBONLOOP_AI_PORT||8514),port=Number.isInteger(requestedPort)&&requestedPort>=1024&&requestedPort<=65535?requestedPort:8514;server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`AI port ${port} is already in use`:'AI bridge could not start');process.exitCode=1;});server.listen(port,'127.0.0.1',()=>console.log(`CarbonLoop AI bridge on 127.0.0.1:${port}; `+(config.key&&config.model?'configured (not yet verified)':'API not configured')));})().catch(()=>{console.error('Private AI configuration was not accepted');process.exitCode=1;});}
-module.exports={createServer,generate,normalize,schema,normalizeCarbonSummary,explainCarbon,carbonExplanationSchema,privateConfig,readPrivateConfig};
+module.exports={createServer,generate,normalize,schema,normalizeCarbonSummary,explainCarbon,carbonExplanationSchema,privateConfig,readPrivateConfig,isLoopbackPageOrigin};
