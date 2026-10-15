@@ -29,7 +29,7 @@ function Add-Label($text,$x,$y,$w,$h) {
  return $label
 }
 $null = Add-Label '连接你自己的 DeepSeek 账户' 24 20 500 32
-$null = Add-Label '密钥仅保留在此窗口内存中；关闭即清除，不写文件或网页。' 24 60 510 28
+$null = Add-Label '密钥只交给本机后台服务，不写文件或网页；连接成功后可关闭此窗口。' 24 60 510 28
 $null = Add-Label 'API Key（请在这里粘贴完整密钥，不要发到聊天）' 24 102 510 28
 $keyBox = New-Object System.Windows.Forms.TextBox
 $keyBox.UseSystemPasswordChar = $true
@@ -53,7 +53,7 @@ $stop.Text = '停止连接'
 $stop.Enabled = $false
 $stop.SetBounds(280,285,254,40)
 $form.Controls.Add($stop)
-$status = Add-Label '请输入密钥。连接后保留此窗口；关闭窗口会停止 AI 服务。' 24 344 510 72
+$status = Add-Label '请输入密钥。连接成功后可关闭窗口，AI 服务会继续在本机后台运行。' 24 344 510 72
 $form.AcceptButton = $connect
 
 function Stop-Bridge {
@@ -78,7 +78,7 @@ $timer.Add_Tick({
   $ready = $script:readyTask.Result
   $script:readyTask = $null
   if($ready -like 'CarbonLoop AI bridge*configured (not yet verified)') {
-   $status.Text = '连接已启动。回到网页检查连接即可。以后更新代码，点击“重新连接”即可，不必重复粘贴密钥。'
+   $status.Text = '连接已启动。现在可以关闭此窗口；AI 服务会在本机后台继续运行。回到网页后会自动检测。'
    $connect.Text = '重新连接（加载更新）'; $connect.Enabled = $true
   }
  } elseif($null -ne $script:readyTask -and ((Get-Date)-$script:startedAt).TotalSeconds -gt 10) {
@@ -130,6 +130,18 @@ $stop.Add_Click({
  $connect.Enabled = $true; $keyBox.Enabled = $true; $modelBox.Enabled = $true; $stop.Enabled = $false
  $status.Text = '已停止。密钥仍仅在此窗口内存中，可直接重新连接；关闭窗口后清除。'
 })
-$form.Add_FormClosed({ $timer.Stop(); Stop-Bridge; $keyBox.Clear(); $script:sessionKey = $null; $timer.Dispose() })
+$form.Add_FormClosed({
+ $timer.Stop()
+ # Closing the setup window must not tear down a working AI bridge. The API
+ # key remains only in the child process memory and disappears when that
+ # process or Windows session ends. The explicit "停止连接" button above is
+ # still the intentional way to stop it while this window is open.
+ if($null -ne $script:bridge) {
+  try { $script:bridge.Dispose() } catch {}
+  $script:bridge = $null
+ }
+ $script:readyTask = $null
+ $keyBox.Clear(); $script:sessionKey = $null; $timer.Dispose()
+})
 [System.Windows.Forms.Application]::Run($form)
 $form.Dispose()
