@@ -107,6 +107,15 @@ public sealed class CarbonLoopPlugin : PlugIn
     {
         if (!EnsureHost(out var error) || _host is null)
             return PublishResult.Failed(error);
+        var result = _host.Publish(payload);
+        if (result.Success || _host.IsRunning)
+            return result;
+
+        // A shared connector may have closed between the health check and the
+        // send. Re-establish the service once and retry the same model so the
+        // architect does not have to run the command twice.
+        if (!EnsureHost(out error) || _host is null)
+            return PublishResult.Failed(error);
         return _host.Publish(payload);
     }
 
@@ -126,7 +135,7 @@ public sealed class CarbonLoopPlugin : PlugIn
             // file, while the browser treats it as a new document navigation.
             var navigationToken = revision?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var url = $"{LocalWebHost.WorkbenchUrl}?source=rhino&revision={navigationToken}&ui=20261015-rc5";
+            var url = $"{LocalWebHost.WorkbenchUrl}?source=rhino&revision={navigationToken}&ui=20261015-single-host-1";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             message = "CarbonLoop 工作台已打开。";
             return true;

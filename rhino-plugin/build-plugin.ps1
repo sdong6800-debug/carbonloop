@@ -9,7 +9,7 @@ $project = Join-Path $pluginRoot 'CarbonLoop.Rhino\CarbonLoop.Rhino.csproj'
 $binaryRoot = Join-Path $pluginRoot 'CarbonLoop.Rhino\bin\Release'
 $staging = Join-Path $pluginRoot ('.build\' + [guid]::NewGuid().ToString('N'))
 $dist = Join-Path $pluginRoot 'dist'
-$version = '0.2.0'
+$version = '0.2.1'
 
 if (-not (Test-Path -LiteralPath $dotnet)) { throw '没有找到项目本地 .NET SDK。' }
 if (-not (Test-Path -LiteralPath $yak)) { throw '没有找到 Rhino 8 Yak 打包工具。' }

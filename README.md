@@ -2,7 +2,7 @@
 
 CarbonLoop 是一个面向小型建筑事务所的 Rhino 8 前期隐含碳分析插件：建筑师选择部分构件、某个图层或整个模型，插件自动读取几何、图层和已赋材料；建筑师只核对不确定项，然后查看可追溯的碳排小计、探索候选修改，并把结果导出为 Excel。
 
-> 当前版本：`0.2.0`。这是前期决策工具，不是完整 LCA、结构求解器或规范合规证明。
+> 当前版本：`0.2.1`。这是前期决策工具，不是完整 LCA、结构求解器或规范合规证明。
 
 ## 一次完整流程
 
@@ -18,7 +18,7 @@ CarbonLoop 是一个面向小型建筑事务所的 Rhino 8 前期隐含碳分析
 
 - Rhino 8 原生 `.rhp/.rhi` 插件，启动时自动建立本机工作台；不再依赖旧版 Python 宏或黑色连接窗口。
 - 首次发送确定分析范围；对象、图层或材质改变后约 1–2 秒自动同步。
-- 8513 / 8515 端口暂时被占用时每 5 秒自动重连，无需重启 Rhino。
+- 发现 8513 / 8515 已由兼容的 CarbonLoop 实例使用时自动复用；新的 Rhino 发送会完整替换网页中的上一份模型，不会要求手动关闭连接窗口。
 - 自动同步保留未变化对象的人工核验；只有新增或语义变化的对象重新进入核验。
 - 使用稳定 Rhino GUID、模型单位、完整图层路径、对象/图层继承材质和封闭几何净体积。
 - 开放曲面与线性对象可以预览和分类，但没有真实工程量时不会拿包围盒体积冒充材料净量。
@@ -50,11 +50,11 @@ CarbonLoop 把 AI 与确定性计算分开：
 
 ## 安装
 
-1. 从 Release 下载 `CarbonLoop-Rhino-0.2.0.rhi`。
+1. 从 Release 下载 `CarbonLoop-Rhino-0.2.1.rhi`。
 2. 关闭 Rhino，双击 `.rhi`，按提示安装后重新打开 Rhino 8。
 3. 在 Rhino 命令栏输入 `CarbonLoop`，浏览器打开 `http://127.0.0.1:8513/demo.html`。
 4. 选择构件并运行 `CarbonLoopSend`。
-5. 可选 AI：解压 `CarbonLoop-AI-Connector-0.2.0.zip`，进入 `ai-service` 文件夹并双击 `connect-deepseek.cmd`，输入自己的完整 DeepSeek API Key 后保持窗口打开。
+5. 可选 AI：解压 `CarbonLoop-AI-Connector-0.2.1.zip`，进入 `ai-service` 文件夹并双击 `connect-deepseek.cmd`，输入自己的完整 DeepSeek API Key 后保持窗口打开。
 
 详细说明见 [rhino-plugin/安装说明.md](rhino-plugin/安装说明.md)，演示脚本见 [演示步骤.md](演示步骤.md)。
 
@@ -69,9 +69,9 @@ cd rhino-plugin
 
 输出位于 `rhino-plugin/dist/`：
 
-- `CarbonLoop-Rhino-0.2.0.rhi`
-- `carbonloop-rhino-0.2.0-any-win.yak`
-- `CarbonLoop-AI-Connector-0.2.0.zip`
+- `CarbonLoop-Rhino-0.2.1.rhi`
+- `carbonloop-rhino-0.2.1-any-win.yak`
+- `CarbonLoop-AI-Connector-0.2.1.zip`
 - `安装说明.md`
 
 ## 核心验证

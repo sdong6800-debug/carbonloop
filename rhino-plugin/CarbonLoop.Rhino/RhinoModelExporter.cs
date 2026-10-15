@@ -9,7 +9,7 @@ namespace CarbonLoop.Rhino;
 internal sealed class RhinoModelExporter
 {
     private const string ContractVersion = "carbonloop.rhino.intake/1.0.0";
-    private const string PluginVersion = "carbonloop-rhino-plugin/0.2.0";
+    private const string PluginVersion = "carbonloop-rhino-plugin/0.2.1";
     private readonly RhinoDoc _doc;
     private readonly SemanticProfile _profile;
     private readonly string _unitName;
@@ -48,7 +48,13 @@ internal sealed class RhinoModelExporter
             ["source"] = new Dictionary<string, object?>
             {
                 ["host"] = "Rhino", ["mode"] = "installed-plugin",
-                ["documentId"] = string.IsNullOrWhiteSpace(_doc.Path) ? _doc.Name ?? "untitled-rhino-model" : _doc.Path,
+                // Unsaved Rhino documents often share the same visible name
+                // (for example "Untitled"). Include the runtime serial number
+                // so a newly-created model cannot inherit the previous model's
+                // review state in the browser.
+                ["documentId"] = string.IsNullOrWhiteSpace(_doc.Path)
+                    ? $"rhino-session:{_doc.RuntimeSerialNumber}:{_doc.Name ?? "untitled-rhino-model"}"
+                    : _doc.Path,
                 ["unitSystem"] = _unitName, ["pluginVersion"] = PluginVersion,
                 ["semanticProfileVersion"] = _profile.Version, ["transmissionId"] = Guid.NewGuid().ToString(),
                 ["sentAt"] = DateTimeOffset.UtcNow.ToString("O"), ["syncMode"] = syncMode, ["syncReason"] = syncReason

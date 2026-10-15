@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>CarbonLoop.Rhino</AssemblyName>
     <RootNamespace>CarbonLoop.Rhino</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Dong Shuyin</Authors>
     <Description>CarbonLoop early-design embodied-carbon workflow for Rhino 8.</Description>
     <RhinoSystemDir Condition="'$(RhinoSystemDir)' == ''">C:\Program Files\Rhino 8\System</RhinoSystemDir>

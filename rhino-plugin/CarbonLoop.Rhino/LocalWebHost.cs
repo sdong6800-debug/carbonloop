@@ -8,6 +8,7 @@ namespace CarbonLoop.Rhino;
 public sealed class LocalWebHost : IDisposable
 {
     public const string WorkbenchUrl = "http://127.0.0.1:8513/demo.html";
+    private const string ContractVersion = "carbonloop.rhino.intake/1.0.0";
     private const int DefaultSitePort = 8513;
     private const int DefaultBridgePort = 8515;
     private const int MaximumRequestBytes = 8 * 1024 * 1024;
@@ -18,6 +19,7 @@ public sealed class LocalWebHost : IDisposable
     private readonly object _payloadLock = new();
     private TcpListener? _siteListener;
     private TcpListener? _bridgeListener;
+    private bool _usesSharedBridge;
     private string? _latestPayload;
     private DateTimeOffset? _latestReceivedAt;
     private int _revision;
@@ -48,23 +50,28 @@ public sealed class LocalWebHost : IDisposable
 
         try
         {
-            _siteListener = new TcpListener(IPAddress.Loopback, _sitePort);
-            _bridgeListener = new TcpListener(IPAddress.Loopback, _bridgePort);
-            _siteListener.Start();
-            _bridgeListener.Start();
+            if (!TryStartBridge(out var bridgeMessage))
+            {
+                DisposeListeners();
+                message = bridgeMessage;
+                StatusMessage = message;
+                return false;
+            }
+
+            if (!TryStartSite(out var siteMessage))
+            {
+                DisposeListeners();
+                message = siteMessage;
+                StatusMessage = message;
+                return false;
+            }
+
             IsRunning = true;
-            StatusMessage = "Rhino 插件与 CarbonLoop 工作台已连接。";
-            _ = AcceptLoopAsync(_siteListener, HandleSiteAsync, _cancellation.Token);
-            _ = AcceptLoopAsync(_bridgeListener, HandleBridgeAsync, _cancellation.Token);
+            StatusMessage = _usesSharedBridge
+                ? "已复用正在运行的 CarbonLoop 服务；本次发送会替换网页中的上一份模型。"
+                : "Rhino 插件与 CarbonLoop 工作台已连接。";
             message = StatusMessage;
             return true;
-        }
-        catch (SocketException)
-        {
-            DisposeListeners();
-            message = $"端口 {_sitePort} 或 {_bridgePort} 正在被旧版连接程序占用。关闭旧版黑色连接窗口后，插件会自动重试，无需重启 Rhino。";
-            StatusMessage = message;
-            return false;
         }
         catch (Exception exception)
         {
@@ -83,6 +90,9 @@ public sealed class LocalWebHost : IDisposable
             var objectCount = document.RootElement.TryGetProperty("objects", out var objects) && objects.ValueKind == JsonValueKind.Array
                 ? objects.GetArrayLength()
                 : 0;
+            if (_usesSharedBridge)
+                return PublishToSharedBridge(payload, objectCount);
+
             lock (_payloadLock)
             {
                 _latestPayload = payload;
@@ -96,6 +106,129 @@ public sealed class LocalWebHost : IDisposable
             return PublishResult.Failed($"模型数据不是有效 JSON：{exception.Message}");
         }
     }
+
+    private bool TryStartBridge(out string message)
+    {
+        try
+        {
+            _bridgeListener = new TcpListener(IPAddress.Loopback, _bridgePort);
+            _bridgeListener.Start();
+            _usesSharedBridge = false;
+            _ = AcceptLoopAsync(_bridgeListener, HandleBridgeAsync, _cancellation.Token);
+            message = "CarbonLoop 数据服务已启动。";
+            return true;
+        }
+        catch (SocketException)
+        {
+            try { _bridgeListener?.Stop(); } catch { }
+            _bridgeListener = null;
+            if (ProbeSharedBridge(out var probeMessage))
+            {
+                _usesSharedBridge = true;
+                message = probeMessage;
+                return true;
+            }
+            message = $"端口 {_bridgePort} 已被其他程序占用，而且不是兼容的 CarbonLoop 服务。请关闭占用该端口的程序后重试。";
+            return false;
+        }
+    }
+
+    private bool TryStartSite(out string message)
+    {
+        try
+        {
+            _siteListener = new TcpListener(IPAddress.Loopback, _sitePort);
+            _siteListener.Start();
+            _ = AcceptLoopAsync(_siteListener, HandleSiteAsync, _cancellation.Token);
+            message = "CarbonLoop 工作台已启动。";
+            return true;
+        }
+        catch (SocketException)
+        {
+            try { _siteListener?.Stop(); } catch { }
+            _siteListener = null;
+            if (ProbeSharedSite())
+            {
+                message = "已复用正在运行的 CarbonLoop 工作台。";
+                return true;
+            }
+            message = $"端口 {_sitePort} 已被其他程序占用，而且没有提供 CarbonLoop 工作台。请关闭占用该端口的程序后重试。";
+            return false;
+        }
+    }
+
+    private bool ProbeSharedBridge(out string message)
+    {
+        message = string.Empty;
+        try
+        {
+            using var client = CreateLocalClient();
+            var json = client.GetStringAsync($"http://127.0.0.1:{_bridgePort}/health").GetAwaiter().GetResult();
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var service = root.TryGetProperty("service", out var serviceElement) ? serviceElement.GetString() ?? "" : "";
+            var status = root.TryGetProperty("status", out var statusElement) ? statusElement.GetString() ?? "" : "";
+            var contract = root.TryGetProperty("contractVersion", out var contractElement) ? contractElement.GetString() ?? "" : "";
+            if (!service.StartsWith("CarbonLoop", StringComparison.OrdinalIgnoreCase)
+                || !status.Equals("ready", StringComparison.OrdinalIgnoreCase)
+                || !contract.Equals(ContractVersion, StringComparison.OrdinalIgnoreCase))
+                return false;
+            message = "检测到已有 CarbonLoop 数据服务，已自动复用。";
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool ProbeSharedSite()
+    {
+        try
+        {
+            using var client = CreateLocalClient();
+            var html = client.GetStringAsync($"http://127.0.0.1:{_sitePort}/demo.html").GetAwaiter().GetResult();
+            return html.Contains("CarbonLoop", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private PublishResult PublishToSharedBridge(string payload, int objectCount)
+    {
+        try
+        {
+            using var client = CreateLocalClient(TimeSpan.FromSeconds(15));
+            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            using var response = client.PostAsync($"http://127.0.0.1:{_bridgePort}/rhino-intake", content).GetAwaiter().GetResult();
+            var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            if (!response.IsSuccessStatusCode)
+                return PublishResult.Failed($"已有 CarbonLoop 服务拒绝了模型数据（HTTP {(int)response.StatusCode}）：{body}");
+
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            var accepted = root.TryGetProperty("accepted", out var acceptedElement) && acceptedElement.GetBoolean();
+            var revision = root.TryGetProperty("revision", out var revisionElement) && revisionElement.TryGetInt32(out var parsedRevision)
+                ? parsedRevision
+                : 0;
+            if (!accepted)
+                return PublishResult.Failed("已有 CarbonLoop 服务没有接收本次模型数据。");
+            return new PublishResult(true, revision, $"已用本次发送的 {objectCount} 个对象替换网页中的上一份模型。");
+        }
+        catch (Exception exception)
+        {
+            IsRunning = false;
+            StatusMessage = $"已有 CarbonLoop 服务连接中断：{exception.Message}";
+            return PublishResult.Failed(StatusMessage);
+        }
+    }
+
+    private static HttpClient CreateLocalClient(TimeSpan? timeout = null) => new()
+    {
+        Timeout = timeout ?? TimeSpan.FromSeconds(3)
+    };
 
     private async Task AcceptLoopAsync(TcpListener listener, Func<TcpClient, CancellationToken, Task> handler, CancellationToken token)
     {
@@ -160,7 +293,7 @@ public sealed class LocalWebHost : IDisposable
             {
                 int? latest;
                 lock (_payloadLock) latest = _latestPayload is null ? null : _revision;
-                await WriteJsonAsync(client, 200, new { service = "CarbonLoop Rhino Plugin", status = "ready", contractVersion = "carbonloop.rhino.intake/1.0.0", latestRevision = latest }, cors, token);
+                await WriteJsonAsync(client, 200, new { service = "CarbonLoop Rhino Plugin", status = "ready", contractVersion = ContractVersion, latestRevision = latest }, cors, token);
                 return;
             }
             if (request.Method == "GET" && request.Path.StartsWith("/rhino-intake/latest", StringComparison.OrdinalIgnoreCase))
@@ -243,6 +376,7 @@ public sealed class LocalWebHost : IDisposable
         try { _bridgeListener?.Stop(); } catch { }
         _siteListener = null;
         _bridgeListener = null;
+        _usesSharedBridge = false;
     }
 
     private sealed record HttpRequestData(string Method, string Path, byte[] Body)

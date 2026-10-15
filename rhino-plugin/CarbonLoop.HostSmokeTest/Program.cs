@@ -44,6 +44,31 @@ internal static class Program
             return 4;
         }
 
+        // A second Rhino session must reuse the existing CarbonLoop service
+        // instead of failing because the fixed local ports are occupied.
+        using var secondHost = new LocalWebHost(args[0], sitePort, bridgePort);
+        if (!secondHost.TryStart(out var sharedMessage))
+        {
+            Console.Error.WriteLine(sharedMessage);
+            return 5;
+        }
+        const string replacementPayload = """
+        {
+          "contractVersion": "carbonloop.rhino.intake/1.0.0",
+          "transmissionId": "smoke-test-002",
+          "objects": [
+            { "id": "new-model-column-01", "name": "New Model Column 01", "category": "column", "material": "steel" },
+            { "id": "new-model-column-02", "name": "New Model Column 02", "category": "column", "material": "steel" }
+          ]
+        }
+        """;
+        var replacement = secondHost.Publish(replacementPayload);
+        if (!replacement.Success)
+        {
+            Console.Error.WriteLine(replacement.Message);
+            return 6;
+        }
+
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         var page = await client.GetAsync($"http://127.0.0.1:{sitePort}/demo.html");
         var healthJson = await client.GetStringAsync($"http://127.0.0.1:{bridgePort}/health");
@@ -54,11 +79,13 @@ internal static class Program
         var ok = page.StatusCode == HttpStatusCode.OK
             && health.RootElement.GetProperty("status").GetString() == "ready"
             && latest.RootElement.GetProperty("available").GetBoolean()
-            && latest.RootElement.GetProperty("payload").GetProperty("objects").GetArrayLength() == 1;
+            && latest.RootElement.GetProperty("payload").GetProperty("transmissionId").GetString() == "smoke-test-002"
+            && latest.RootElement.GetProperty("payload").GetProperty("objects").GetArrayLength() == 2;
 
         Console.WriteLine(JsonSerializer.Serialize(new
         {
             started = startMessage,
+            shared = sharedMessage,
             pageStatus = (int)page.StatusCode,
             health = health.RootElement.GetProperty("status").GetString(),
             latestRevision = latest.RootElement.GetProperty("revision").GetInt32(),
