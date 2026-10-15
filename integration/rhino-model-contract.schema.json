@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carbonloop.local/schemas/rhino-intake-1.0.0.json",
+  "title": "CarbonLoop Rhino Intake Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "source", "selection", "objects"],
+  "properties": {
+    "schemaVersion": { "const": "carbonloop.rhino.intake/1.0.0" },
+    "source": {
+      "type": "object",
+      "required": ["host", "documentId", "unitSystem", "pluginVersion"],
+      "properties": {
+        "host": { "const": "Rhino" },
+        "documentId": { "type": "string", "minLength": 1 },
+        "unitSystem": { "enum": ["Meters", "Millimeters", "Centimeters"] },
+        "pluginVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": { "mode": { "enum": ["selection", "floor", "all"] } }
+    },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "typeHint", "geometry"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "typeHint": { "enum": ["slab", "beam", "column", "wall", "foundation", "other", "unknown"] },
+          "floor": { "type": ["string", "null"] },
+          "layer": { "type": ["string", "null"] },
+          "geometry": {
+            "type": "object",
+            "required": ["kind", "origin", "dimensions"],
+            "properties": {
+              "kind": { "const": "box" },
+              "origin": { "type": "array", "prefixItems": [{"type":"number"},{"type":"number"},{"type":"number"}], "minItems": 3, "maxItems": 3 },
+              "dimensions": { "type": "array", "prefixItems": [{"type":"number","exclusiveMinimum":0},{"type":"number","exclusiveMinimum":0},{"type":"number","exclusiveMinimum":0}], "minItems": 3, "maxItems": 3 }
+            }
+          },
+          "material": { "type": ["object", "null"] },
+          "quantity": { "type": ["object", "null"] }
+        }
+      }
+    }
+  }
+}

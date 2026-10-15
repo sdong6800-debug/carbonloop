@@ -1,0 +1,61 @@
+/* Browser-only report export. No service, credentials or external dependency.
+ * The workbook is a snapshot of the current calculation, not a new calculator.
+ * Writes typed OOXML cells (never executable formulas from imported text).
+ */
+(function(root){
+ 'use strict';
+ const enc=new TextEncoder(),ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+ const xml=s=>String(s??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+ const col=i=>{let s='';for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;};
+ const crcTable=Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
+ const crc=b=>{let c=0xffffffff;for(const v of b)c=crcTable[(c^v)&255]^(c>>>8);return (c^0xffffffff)>>>0;};
+ // Uncompressed ZIP is sufficient for these small reports and works offline.
+ function zip(files){let offset=0;const parts=[],central=[];const u16=(v,p,n)=>v.setUint16(p,n,true),u32=(v,p,n)=>v.setUint32(p,n,true);
+  for(const [path,content] of files){const name=enc.encode(path),data=enc.encode(content),sum=crc(data),h=new Uint8Array(30+name.length),v=new DataView(h.buffer);
+   u32(v,0,0x04034b50);u16(v,4,20);u16(v,6,0x800);u16(v,12,33);u32(v,14,sum);u32(v,18,data.length);u32(v,22,data.length);u16(v,26,name.length);h.set(name,30);parts.push(h,data);
+   const c=new Uint8Array(46+name.length),w=new DataView(c.buffer);u32(w,0,0x02014b50);u16(w,4,20);u16(w,6,20);u16(w,8,0x800);u16(w,14,33);u32(w,16,sum);u32(w,20,data.length);u32(w,24,data.length);u16(w,28,name.length);u32(w,42,offset);c.set(name,46);central.push(c);offset+=h.length+data.length;
+  }
+  const length=central.reduce((s,c)=>s+c.length,0),end=new Uint8Array(22),v=new DataView(end.buffer);u32(v,0,0x06054b50);u16(v,8,files.length);u16(v,10,files.length);u32(v,12,length);u32(v,16,offset);
+  return new Blob([...parts,...central,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ }
+ const styles=`<styleSheet xmlns="${ns}"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00####"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF254B45"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+ function build(sheets){
+  const resolvedStyles=styles.replace('formatCode="#,##0.00####"','formatCode="0.000000"').replace('<cellXfs count="3">','<cellXfs count="5">').replace('<xf numFmtId="164"','<xf numFmtId="4"').replace('</cellXfs>','<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>');
+  const files=[['_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],['xl/styles.xml',resolvedStyles]];
+  files.push(['[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>']);
+  files.push(['xl/workbook.xml',`<workbook xmlns="${ns}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>`+sheets.map((s,i)=>`<sheet name="${xml(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')+'</sheets></workbook>']);
+  files.push(['xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')+'<Relationship Id="styles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>']);
+  sheets.forEach((s,i)=>{const columns=Math.max(...s.rows.map(r=>r.length)),widths=Array.from({length:columns},(_,c)=>s.widths?.[c]||22);
+   const rows=s.rows.map((r,y)=>{const height=y===0?42:Math.min(220,Math.max(28,...r.map((v,c)=>Math.ceil(String(v??'').replace(/[^\x00-\x7f]/g,'xx').length/widths[c])*15+8)));
+    return `<row r="${y+1}" ht="${height}" customHeight="1">`+r.map((value,c)=>{const ref=col(c)+(y+1),numeric=typeof value==='number'&&Number.isFinite(value),style=Number.isInteger(value)?4:s.name==='材料因子与来源'||(s.name==='构件明细'&&c>=5&&c<=9)?3:2;return numeric?`<c r="${ref}" s="${y===0?1:style}" t="n"><v>${value}</v></c>`:`<c r="${ref}" s="${y===0?1:0}" t="inlineStr"><is><t xml:space="preserve">${xml(value==null?'未提供':typeof value==='boolean'?(value?'是':'否'):value)}</t></is></c>`;}).join('')+'</row>';}).join('');
+   files.push([`xl/worksheets/sheet${i+1}.xml`,`<worksheet xmlns="${ns}"><dimension ref="A1:${col(columns-1)}${s.rows.length}"/><sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${widths.map((w,c)=>`<col min="${c+1}" max="${c+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData>${s.filter&&s.rows.length>1?`<autoFilter ref="A1:${col(columns-1)}${s.rows.length}"/>`:''}</worksheet>`]);
+  });return zip(files);
+ }
+ function download(name,sheets){const url=URL.createObjectURL(build(sheets)),a=document.createElement('a');a.href=url;a.download=name+'.xlsx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+ const sheet=(name,rows,widths,filter=false)=>({name,rows,widths,filter});
+ function model(p){const C=root.ModelCore,a=p.A.result,b=p.B?.result,comparison=p.comparison;
+  const summary=[['项目','修改前','修改后','单位 / 说明'],['导出时间',p.exported_at,'','当前页面结果快照；修改后请重新导出'],['分析范围',a.total,b?.total??'尚未建立','构件数'],['可计算构件',a.known,b?.known??'尚未建立','缺失不按零处理'],['计算覆盖',a.complete?'范围内材料齐全':'仅已知部分',b?(b.complete?'范围内材料齐全':'仅已知部分'):'尚未建立','仅生产与处置'],['生产',a.known?a.production:null,b?.known?b.production:null,'kg CO₂e'],['处置',a.known?a.disposal:null,b?.known?b.disposal:null,'kg CO₂e'],['已知部分小计',a.value,b?.value??null,'kg CO₂e；非完整生命周期'],['修改后减修改前','',comparison?.compatible?comparison.delta:'不可比较','kg CO₂e；正数为增加，负数为减少'],['变化率','',comparison?.compatible?comparison.percent:'不可比较','%'],['候选决定','',p.comparison_decision?.status||'not_reviewed','保留仅表示进入下一轮验证'],['结构状态','未核验',p.comparison_decision?.structural_status||'not_determined','不是结构批准或施工结论'],['RAG 引用','',(p.comparison_decision?.rag_citation_ids||[]).join('；')||'未运行','仅列本次实际引用 ID'],['草案来源',p.workflow.candidate_origin,'',''],['未计入范围','运输、施工、更换、运营及未建模材料','','不是零排放'],['模型来源',p.origin,'','']];
+  const rows=[['方案','构件编号','楼层','构件名称','材料类别','长 m','宽 m','高 m','材料净体积 m³','质量 kg','生产 kg CO₂e','处置 kg CO₂e','小计 kg CO₂e','状态','因子编号','数量依据','材料匹配说明']];
+  for(const [label,result] of [['修改前',a],['修改后',b]])if(result)for(const e of result.lines)rows.push([label,e.id,e.floor||e.level||'未提供',e.name||({slab:'楼板',column:'柱',wall:'墙'}[e.type]||e.type),C.materialInfo(e.material).name,e.l,e.w,e.h,e.volume,e.mass,e.production,e.disposal,e.value,e.error||'已计算',e.factor?.id,e.quantityBasis,e.referenceNote]);
+  const ids=new Set([...a.lines,...(b?.lines||[])].map(e=>e.factor?.id).filter(Boolean));
+  const factors=[['因子编号','原文材料名','密度 kg/m³','生产因子 kg CO₂e/kg','处置因子 kg CO₂e/kg','来源版本','来源地区','原表工作表','原表单元格','来源链接']];
+  for(const f of p.factors.filter(f=>ids.has(f.id)))factors.push([f.id,f.original,f.density,f.production,f.disposal,f.source.name,f.source.region,f.source.sheet,`${f.cells.density} / ${f.cells.production} / ${f.cells.disposal}`,f.source.url]);
+  download('CarbonLoop-碳分析结果',[sheet('结果对比',summary,[26,48,32,56]),sheet('构件明细',rows,[14,16,14,22,28,14,14,14,22,18,22,22,22,45,18,60,60],true),sheet('材料因子与来源',factors,[18,60,20,26,26,28,24,34,30,65],true)]);
+ }
+ function cases(p){const summary=[['项目','当前内容'],['导出时间',p.exported_at],['指标',p.metric.label],['单位',p.unit],['筛选后的记录数',p.records.length],['同口径组记录数',p.cohort.row_ids.length],['同口径组',p.cohort.key||'未选择'],['比较规则','缺失不按零处理；不同口径不作差；D 单列；不代表因果减碳效果'],['数据来源',p.source.source_url],['证据来源',p.source.evidence_url],['版本',p.source.commit]];
+  for(const [k,v] of Object.entries(p.filters))summary.push([({country:'国家筛选',subtype:'用途筛选',structure:'结构筛选',search:'搜索'}[k]),v]);
+  const rows=[['记录编号','项目编号','国家','用途','结构类型','建筑总面积 m²','面积口径','研究期 年','构件范围','当前指标结果','单位','纳入同口径组','已选对照','排除原因','数据库','软件']];
+  for(const r of p.records){const s=r.source_record;rows.push([r.row_id,r.project_code,r.country,s.bldg_use_subtype,s.bldg_struct_type,root.EUECB?.numeric?.(s.bldg_area_gfa)??s.bldg_area_gfa,s.bldg_area_definition,s.lca_RSP,s.scope_parts,r.value,r.unit,r.in_active_cohort,p.comparison_row_ids.includes(r.row_id),r.comparison_exclusions.join('；')||'无',s.lca_database,s.lca_software]);}
+  download('CarbonLoop-案例参考',[sheet('筛选与依据',summary,[28,95]),sheet('案例明细',rows,[18,20,20,24,26,24,28,18,42,24,26,22,18,65,35,30],true)]);
+ }
+ function timber(s){const names={gluelam:'胶合木',lumber:'锯材',paper:'纸制品',sawdust:'锯末',offcuts:'边角料',wood:'回收木材'},labels={0:'起点',1:'初次制造',2:'锯末及所选边角料释放',7:'纸制品释放',50:'碳吸收假设',60:'首轮建材释放',61:'再加工',62:'再加工副产品释放',110:'第二轮碳吸收假设',120:'回收木材释放',200:'分析期结束'};
+  const inputs=[['设置','数值 / 选项','单位 / 说明'],['导出时间',new Date().toISOString(),'当前情景快照'],['分析期',200,'年'],['功能单位',1,'m³ 木材'],['碳吸收假设',s.inputs.seqOn,'开关'],['寿命结束后回收',s.inputs.reclaim,'开关'],['首轮边角料去向',s.inputs.virginOffcuts==='burn'?'焚烧':'作为建材',''],['回收边角料去向',s.inputs.reclaimedOffcuts==='burn'?'焚烧':'作为建材',''],['运输距离',s.inputs.km,'km；回收情景'],['再加工能耗',s.inputs.mjConsumed,'MJ；回收情景'],['电力碳强度',s.inputs.gridGPerKwh,'g/kWh；原参考口径待统一'],['计算边界','参考时间线情景；未验证的碳平衡与因子假设','非整栋建筑完整 LCA'],['来源','Timber Carbon Timeline (Copy).html','用户提供的参考页面；非实测数据']];
+  for(const [group,title] of [['virgin','初次加工'],['reclaimed','回收加工']])for(const [k,v] of Object.entries(s.inputs[group]))inputs.push([title+'：'+(names[k]||k),v,'%']);
+  const points=[['年份','阶段事件','本次变化（kg CO₂/m³ 木材）','累计净值（kg CO₂/m³ 木材）'],...s.result.points.map(p=>[p.x,labels[p.x]||p.label,p.delta,p.y])];
+  inputs.push(['单位说明','保留参考页面 CO₂ 标签；电力因子存在 CO₂ / CO₂e 混合口径','正式使用前需统一与验证']);
+  download('CarbonLoop-木材时间线',[sheet('时间线结果',points,[14,36,32,34]),sheet('情景设置与依据',inputs,[34,72,58])]);
+ }
+ root.CarbonExcel={build,model,cases,timber};
+ function labels(){for(const id of ['export','exportBtn','downloadResult']){const b=document.getElementById(id);if(b)b.textContent='下载 Excel ↓';}if(root.CarbonWorkspace?.state().step===4)root.ComparisonDecision?.render?.();}
+ document.addEventListener('DOMContentLoaded',labels);document.addEventListener('carbon-model-render',()=>queueMicrotask(labels));
+})(window);

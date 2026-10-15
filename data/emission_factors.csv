@@ -1,0 +1,8 @@
+category,name,factor_kgco2e_per_m2_gfa,region,year,source,status
+structure,钢筋混凝土结构,360,Demo,2026,Illustrative proxy only,演示
+structure,钢结构,300,Demo,2026,Illustrative proxy only,演示
+structure,重木结构,160,Demo,2026,Illustrative proxy only,演示
+envelope,砖石与常规窗墙,95,Demo,2026,Illustrative proxy only,演示
+envelope,轻质幕墙,125,Demo,2026,Illustrative proxy only,演示
+envelope,木质围护系统,70,Demo,2026,Illustrative proxy only,演示
+

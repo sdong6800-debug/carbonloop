@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),M=require('./material-intake.js'),C=require('./model-core.js');
+const cases=[['现浇混凝土 C30/37','concrete-cast'],['Precast concrete C40/50','concrete-precast'],['Steel section S355','steel-section'],['Glulam GL28h','timber-glulam'],['CLT floor panel','timber-clt'],['HRB400 钢筋','rebar'],['钢筋网','rebar-mesh'],['Clay brick','masonry-clay'],['Material 007','unknown'],['灰色','unknown'],['Concrete C30/37','unknown']];
+for(const [name,id] of cases)assert.equal(M.match({name}).material,id,name);
+assert.equal(M.match({name:'钢材',productType:'steel-tube'}).material,'steel-tube');
+assert.equal(M.match({name:'钢板',productType:'concrete-cast'}).material,'unknown');
+assert.equal(M.match({name:'通用混凝土',appearanceOnly:true}).material,'unknown');
+assert.equal(M.match({name:'混凝土',layers:[{name:'混凝土'},{name:'钢筋'}]}).material,'unknown');
+const raw={id:'project-42',name:'Steel section S355',grade:'S355',origin:'object attribute'};assert.deepEqual(M.match(raw).materialRecord,raw);
+const mixed=M.sample(),first=mixed.filter(e=>e.floor==='1F').map(e=>({...e,...M.match(e.materialRecord)}));
+assert.equal(mixed.length,11);assert.deepEqual([...new Set(first.map(e=>e.material))],['concrete-cast','steel-section','timber-glulam','masonry-clay']);
+assert.ok(C.calculate(first).value>0);assert.ok(first.every(e=>C.element(e).value>0));assert.equal(C.calculate(first).known,6);
+const baseline=M.sample('concrete').filter(e=>e.floor==='1F').map(e=>({...e,...M.match(e.materialRecord)}));assert.equal(C.calculate(baseline).value,C.calculate(C.sample()).value);
+console.log('PASS original attribute preservation, name/product mapping, conflict/appearance/composite/unknown gates, mixed fixture and unchanged baseline factors');

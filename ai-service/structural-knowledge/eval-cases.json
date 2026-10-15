@@ -1,0 +1,21 @@
+{
+  "suite": "structural-rag-retrieval-v1",
+  "cases": [
+    {"id":"E01-thicker-cast-slab","after":{"h":0.27},"include":["CL-RULE-THICKER-SLAB","AU-NCC2022-B1D3-PERMANENT-ACTION"],"exclude":["CL-RULE-THINNER-SLAB"]},
+    {"id":"E02-thinner-cast-slab","after":{"h":0.18},"include":["CL-RULE-THINNER-SLAB","AU-NCC2022-B1D4-CONCRETE-ROUTE"],"exclude":["CL-RULE-THICKER-SLAB"]},
+    {"id":"E03-precast-material-change","after":{"material":"concrete-precast"},"include":["CL-RULE-MATERIAL-EQUIVALENCE","AU-NCC2022-B1D4-CONCRETE-ROUTE"],"exclude":["CL-RULE-LOAD-PATH"]},
+    {"id":"E04-position-change","after":{"x":1},"include":["CL-RULE-LOAD-PATH","AU-NCC2022-B1D2-ACTION-RESISTANCE"],"exclude":["CL-RULE-THICKER-SLAB"]},
+    {"id":"E05-thicker-keeps-safety-gate","after":{"h":0.21},"include":["CL-RULE-CODE-VERSION-GATE","AU-NCC2022-B1D2-ACTION-RESISTANCE"]},
+    {"id":"E06-thinner-keeps-safety-gate","after":{"h":0.19},"include":["CL-RULE-CODE-VERSION-GATE","AU-NCC2022-B1D2-ACTION-RESISTANCE"]},
+    {"id":"E07-material-and-thickness","after":{"h":0.18,"material":"concrete-precast"},"include":["CL-RULE-THINNER-SLAB","CL-RULE-MATERIAL-EQUIVALENCE"]},
+    {"id":"E08-position-and-thickness","after":{"x":1,"h":0.25},"include":["CL-RULE-LOAD-PATH","CL-RULE-THICKER-SLAB"]},
+    {"id":"E09-explicit-china-rejected","after":{"h":0.18},"project":{"country":"CN"},"status":"unsupported_jurisdiction"},
+    {"id":"E10-explicit-germany-rejected","after":{"h":0.18},"project":{"jurisdiction":"DE"},"status":"unsupported_jurisdiction"},
+    {"id":"E11-no-change-no-retrieval","after":{},"status":"no_structural_change"},
+    {"id":"E12-confirmed-project-context","after":{"h":0.18},"project":{"country":"AU","state_or_territory":"NSW","building_class":"5","approval_date":"2026-10-07","edition":"NCC 2022","edition_confirmed":true},"applicability":"selected_project_context"},
+    {"id":"E13-missing-class-stays-candidate","after":{"h":0.18},"project":{"country":"AU","state_or_territory":"NSW","edition":"NCC 2022","edition_confirmed":true},"applicability":"candidate_reference_only"},
+    {"id":"E14-unconfirmed-edition-stays-candidate","after":{"h":0.18},"project":{"country":"AU","state_or_territory":"NSW","building_class":"5","edition":"NCC 2022"},"applicability":"candidate_reference_only"},
+    {"id":"E15-steel-substitution-no-concrete-route","after":{"material":"steel"},"include":["CL-RULE-MATERIAL-EQUIVALENCE"],"exclude":["AU-NCC2022-B1D4-CONCRETE-ROUTE"]},
+    {"id":"E16-precast-thicker","before":{"material":"concrete-precast"},"after":{"material":"concrete-precast","h":0.24},"include":["CL-RULE-THICKER-SLAB","AU-NCC2022-B1D4-CONCRETE-ROUTE"]}
+  ]
+}

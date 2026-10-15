@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CarbonLoop · Rhino 连接说明</title>
+  <link rel="stylesheet" href="demo.css?v=20261007-rhino-guide-1">
+  <link rel="stylesheet" href="rhino-setup.css?v=20261007-rhino-guide-1">
+</head>
+<body>
+<header><a class="brand" href="demo.html"><span class="brand-mark">C</span> CarbonLoop <small>设计决策工作台</small></a><nav aria-label="主导航"><a href="demo.html">模型分析</a><a href="dashboard.html">案例参考</a><a href="index.html">木材时间线</a><a href="rhino-setup.html" aria-current="page">Rhino 连接</a></nav></header>
+<main class="setup-page">
+  <div class="setup-hero">
+    <p class="eyebrow">RHINO 8 / LOCAL CONNECTOR</p>
+    <h1>把 Rhino 模型发送到 CarbonLoop</h1>
+    <p>安装原生 Rhino 8 插件后，Rhino 会直接建立本地工作台并在进程内发布模型；不再需要黑色连接窗口或 Python 宏。</p>
+    <div class="setup-actions"><a class="setup-primary" href="downloads/CarbonLoop-Rhino-0.2.0.rhi" download>下载 Rhino 插件 ↓</a><a class="setup-secondary" href="downloads/CarbonLoop-Rhino-Teacher-Guide.pdf" download>下载教师安装手册（PDF）</a><a class="setup-secondary" href="demo.html">先查看网页演示 →</a></div>
+  </div>
+  <section class="setup-grid" aria-label="安装步骤">
+    <article><span>01</span><h2>安装插件</h2><p>关闭 Rhino，双击下载的 <code>CarbonLoop-Rhino-0.2.0.rhi</code>，按安装提示完成。</p></article>
+    <article><span>02</span><h2>打开工作台</h2><p>重新打开 Rhino，在命令栏输入 <code>CarbonLoop</code>。插件会直接打开本机工作台。</p></article>
+    <article><span>03</span><h2>创建可选按钮</h2><p>如需工具栏按钮，在 Rhino 输入 <code>Macros</code>，新建“发送到 CarbonLoop”，宏使用下方原生命令。</p></article>
+    <article><span>04</span><h2>发送并核对</h2><p>预选构件，或在命令中选择当前图层/整个模型。运行后网页会收到并自动打开最新模型。</p></article>
+  </section>
+  <section class="setup-command">
+    <h2>Rhino 宏命令</h2>
+    <pre>! _CarbonLoopSend</pre>
+    <p>本地工作台地址：<a href="http://127.0.0.1:8513/demo.html">http://127.0.0.1:8513/demo.html</a></p>
+  </section>
+  <section class="setup-truth">
+    <h2>当前版本可以做什么？</h2>
+    <ul><li>读取选择范围、Rhino 单位、稳定对象 ID、图层、材料名称、三维包围盒与封闭实体净体积。</li><li>原生插件在 Rhino 进程内发布数据，并在后续图层、构件与材质变化时自动同步当前范围。</li><li>网页供建筑师核对构件分类、楼层和碳材料映射；自定义命名仍需人工确认。</li><li>结构求解、双向高亮、网页修改写回 Rhino 仍属于后续版本。</li></ul>
+  </section>
+</main>
+</body>
+</html>

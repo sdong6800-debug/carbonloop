@@ -1,0 +1,38 @@
+{
+  "version": "carbonloop.rhino.semantic-profile/0.3.1",
+  "elementTypes": {
+    "slab": ["slab", "slabs", "floor", "floors", "floor slab", "floor slabs", "deck", "decks", "plate", "plates", "楼板", "板"],
+    "beam": ["beam", "beams", "girder", "girders", "梁"],
+    "column": ["column", "columns", "post", "posts", "pillar", "pillars", "柱"],
+    "wall": ["wall", "walls", "partition", "partitions", "墙"],
+    "foundation": ["foundation", "foundations", "footing", "footings", "pile", "piles", "基础", "承台", "桩"],
+    "roof": ["roof", "roofs", "roofing", "屋顶", "屋面"],
+    "glazing": ["glazing", "glass", "window", "windows", "curtain wall", "curtain walls", "玻璃", "窗", "幕墙"],
+    "mullion": ["mullion", "mullions", "window frame", "window frames", "curtain wall frame", "窗框", "幕墙框"],
+    "door": ["door", "doors", "门"],
+    "stair": ["stair", "stairs", "staircase", "staircases", "楼梯"]
+  },
+  "materials": {
+    "concrete": ["concrete", "generic concrete", "混凝土"],
+    "concrete-cast": ["cast in situ concrete", "cast in place concrete", "in situ concrete", "现浇混凝土"],
+    "concrete-precast": ["precast concrete", "预制混凝土"],
+    "rebar": ["rebar", "reinforcing steel", "reinforcement", "钢筋"],
+    "rebar-mesh": ["reinforcing mesh", "steel mesh", "钢筋网"],
+    "steel-section": ["structural steel", "steel section", "steel beam", "steel column", "型钢", "结构钢"],
+    "steel-tube": ["steel tube", "steel hollow section", "hollow structural section", "钢管"],
+    "steel-plate": ["steel plate", "钢板"],
+    "timber-solid": ["solid timber", "sawn timber", "wood", "实木", "锯材", "木材"],
+    "timber-glulam": ["glulam", "glue laminated timber", "胶合木"],
+    "timber-clt": ["clt", "cross laminated timber", "交叉层压木"],
+    "masonry-clay": ["clay brick", "brick", "砖", "黏土砖", "粘土砖"],
+    "masonry-concrete": ["concrete block", "cmu", "混凝土砌块"],
+    "masonry-aac": ["aac", "aerated concrete", "加气混凝土"],
+    "glass": ["glass", "glazing", "玻璃"],
+    "aluminium": ["aluminium", "aluminum", "铝"],
+    "insulation": ["insulation", "保温"],
+    "gypsum": ["gypsum", "plasterboard", "石膏板"],
+    "stone-natural-polished": ["carrara", "marble", "natural stone", "polished stone", "大理石", "天然石材", "抛光石材"],
+    "finish": ["finish", "finishes", "tile", "terrazzo", "flooring", "carpet", "render", "cladding", "饰面", "瓷砖", "水磨石", "地板", "地毯", "抹灰", "覆层"]
+  },
+  "excludeFromCarbonAnalysis": ["annotation", "annotations", "dimension", "dimensions", "dims", "text", "texts", "notes", "grid", "grids", "axis", "axes", "camera", "cameras", "light", "lights", "标注", "尺寸", "轴网"]
+}

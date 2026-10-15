@@ -1,0 +1,42 @@
+CarbonLoop 本地 AI 接入
+
+2026-10-06：DeepSeek 本地连接窗口
+双击 connect-deepseek.cmd，粘贴完整密钥，默认模型 deepseek-flash，点击启用。
+密钥通过子进程标准输入传给服务，不写入磁盘、命令参数、日志或网页；运行时仍在进程内存中。
+窗口保持打开。关闭或点击停止，仅结束该窗口启动的服务；重连需要重新输入密钥。
+若 8514 已被其他服务占用，不会自动结束其他进程，需先处理旧服务。
+启用只说明本地配置就绪，不代表账号、权限、余额或真实模型调用成功。
+回到设计助手 → 检查连接 → 同意发送 → 生成材料建议。连接按钮与授权已直接展示，不再折叠。
+只有网页确认后请求模型；成功返回并通过校验后，后台 networkVerified 才变为 true。
+模型与接口：https://api-docs.deepseek.com/api/create-response/
+本轮为有资料检索、确定性复算、结构 RAG 和输出校验的受限 AI 建议流程，不是任意工具调用的自主 Agent。
+材料助手可研究指定混凝土配方替换；结构修改助手可解释澳洲混凝土楼板的加厚、减薄、换材料和位置变化，但不支持任意材料/尺寸的自主优化或结构安全认证。
+
+当前实现：OpenAI 或 DeepSeek Responses API，JSON Schema 输出；本地材料相关性检索后加入上下文。
+结构修改助手另有最小版 RAG：8 个获准知识片段，先按地区、构件、材料和改动类型过滤，再排序并组成 Evidence Packet；模型必须返回本次检索中的 citationIds，程序拒绝伪造引用。它不是向量数据库，也不是完整结构规范资料库；未装入付费标准全文，项目州、建筑类别和适用版本缺失时不会输出合规结论。
+
+启动环境必须在后台设置 OPENAI_API_KEY 和 OPENAI_MODEL。
+不要将密钥写入 reference-demo、网页、截图、导出文件或聊天。
+模型名使用你账号已开通且支持 Responses / Structured Outputs 的模型。
+如果选择 DeepSeek，后台改设 CARBONLOOP_AI_PROVIDER=deepseek，并配置 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL；不是在网页中填写。
+未配置时没有默认模型，也不会借用 Codex/ChatGPT 登录凭据。
+运行 node server.cjs。服务仅监听 127.0.0.1:8514；网页保持 http://127.0.0.1:8513/demo.html。
+刷新页面，在“探索改进”点击“检查 AI 连接”。配置成功不代表调用已经验证。
+只有在明确勾选发送资料并点击生成后才请求模型；发送精简构件几何、材料、计算值、当前选中构件和输入的设计要求。
+可选附件：最多一张 2 MB 的 PNG/JPEG 截图，仅 deepseek-flash 开放图片输入。
+图片选择后仅本地预览，重新要求发送授权；点击生成才发送，不写入项目文件或导出结果。
+截图是辅助资料，不用于替代精确几何/尺寸/荷载/材料性能。切换构件、改模型或换截图均使旧建议失效。
+store:false；并不代表供应商无任何日志或数据保留，应另核对所用账户的数据政策。
+
+没有密钥时，只能用“规则试算（非 AI）”；不生成伪 AI 回复。
+浏览器不接收密钥，不保存密钥，不自动替换方案；任何候选需人工确认。
+每次仅允许一个通用/现浇混凝土构件替换为指定的瑞士 Q-A230 配方碳数据。
+这是学习用情景试算，不说明材料力学等效、规范符合、当地供应或结构安全。
+
+此服务不适合直接公开部署：尚无用户登录/配额/HTTPS/API 鉴权。
+不要把端口转发到公网。腾讯云部署需要另行实现这些保护，并使用服务端密钥。
+GitHub Release 会把本目录的运行文件单独打包为 CarbonLoop-AI-Connector-0.2.0.zip；不会包含 API 密钥、虚拟环境或日志。
+
+接口实现依据：https://developers.openai.com/api/docs/guides/structured-outputs
+材料数据依据：https://www.kbob.admin.ch/de/oekobilanzdaten-im-baubereich
+DeepSeek 接口依据：https://api-docs.deepseek.com/api/create-response/

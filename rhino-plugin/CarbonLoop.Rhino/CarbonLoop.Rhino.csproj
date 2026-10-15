@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>CarbonLoop.Rhino</AssemblyName>
+    <RootNamespace>CarbonLoop.Rhino</RootNamespace>
+    <Version>0.2.0</Version>
+    <Authors>Dong Shuyin</Authors>
+    <Description>CarbonLoop early-design embodied-carbon workflow for Rhino 8.</Description>
+    <RhinoSystemDir Condition="'$(RhinoSystemDir)' == ''">C:\Program Files\Rhino 8\System</RhinoSystemDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RhinoCommon">
+      <HintPath>$(RhinoSystemDir)\RhinoCommon.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Compile Remove="CarbonLoopPanel.cs" />
+  </ItemGroup>
+
+  <Target Name="CreateRhinoPlugin" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)CarbonLoop.Rhino.rhp" />
+  </Target>
+</Project>

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarbonLoop · 建筑案例碳看板</title><link rel="stylesheet" href="dashboard.css?v=real1"><script defer src="euecb-core.js?v=real2"></script><script defer src="dashboard.js?v=real2"></script></head>
+<body><script src="excel-export.js?v=20261006-1"></script><div class="shell">
+<header class="topbar"><a class="brand" href="demo.html">CarbonLoop<span>建筑碳与循环设计</span></a><nav><a href="demo.html">我的模型</a><a href="index.html">木材时间线</a><a href="#method">数据与比较规则</a><button id="exportBtn" disabled>导出当前结果</button></nav></header>
+<div class="heading"><div class="eyebrow">PROJECT CARBON DATABASE / 01</div><h1>建筑案例碳看板</h1><p>从真实案例出发，查看建筑属性、碳排放与比较依据。</p><span class="source-tag">EU-ECB · 欧洲建筑公开数据</span></div>
+<div id="loadStatus" class="notice" role="status">正在读取本地数据快照…</div>
+<main class="workspace" id="app" hidden>
+<aside class="sidebar"><div class="sidehead"><span class="eyebrow">DATABASE</span><h2>案例筛选</h2><p>EU-ECB 数据快照 · 2022</p></div><div class="sidebody">
+<label>国家 / 地区<select id="country"></select></label><label>建筑用途<select id="sector"></select></label><label>结构类型<select id="structure"></select></label><label>搜索项目编号<input id="search" placeholder="例如 BUILD03" type="search"></label>
+<button id="resetFilters" class="secondary">重置筛选</button>
+<hr><h3>比较设置</h3><label>生命周期范围<select id="scope"><option value="reference">A1–A3 + C3–C4</option><option value="production">A1–A3 · 材料生产</option><option value="upfront">A1–A5 · 前期隐含碳</option><option value="end">C3–C4 · 处理与处置</option><option value="embodied">原记录隐含碳合计</option></select></label>
+<label>显示单位<select id="unit"><option value="annual">kg CO₂e / m² / 年</option><option value="period">kg CO₂e / m² · 原研究期</option></select></label>
+<p class="help">切换单位只改变显示，不改变研究期，也不把各项目统一假设为 60 年。D 不从选定阶段结果中扣除。</p>
+</div><div class="sidefoot">先筛选感兴趣的建筑，再选择口径一致的比较组。缺数据的案例仍可查看。</div></aside>
+<div class="content">
+<div class="metrics" aria-live="polite"><article><span>数据库记录</span><strong id="totalCount">—</strong><small id="uniqueCount"></small></article><article><span>当前筛选记录</span><strong id="count">—</strong><small id="availableCount"></small></article><article><span>当前同口径组</span><strong id="cohortCount">—</strong><small>只对本组计算统计结果</small></article><article><span>本组平均碳强度</span><strong id="average">—</strong><small class="unitLabel"></small></article></div>
+<section class="cohort-box"><div class="panelhead"><h2>选择同口径比较组</h2><span class="pill">数据口径匹配 ≠ 专业等效认证</span></div><label class="sr-only" for="cohort">同口径比较组</label><select id="cohort"></select><p id="cohortDescription"></p><p id="eligibilityNote" class="help"></p><div class="actions"><label class="check"><input type="checkbox" id="onlyCohort">列表仅显示本组</label><button id="pickPair" class="secondary">选取本组前 2 条对照</button></div></section>
+<div class="dashboard-grid"><div class="dashboard-left">
+<section class="panel"><div class="panelhead"><h2>国家 / 地区分布</h2><small>当前筛选记录 · 非项目坐标</small></div><div id="countryDistribution" class="country-grid"></div></section>
+<section class="panel"><div class="panelhead"><h2>案例列表</h2><span id="tableCount" class="pill"></span></div><p class="help">点击编号看原始字段；勾选最多 3 条进行对照。「未入组」不代表零排放。</p><div class="tablewrap"><table><thead><tr><th>对照</th><th>项目编号 / 记录</th><th>国家 · 用途</th><th>结构</th><th>面积 m²</th><th id="valueHeader">碳强度</th><th>比较状态</th></tr></thead><tbody id="caseRows"></tbody></table></div><div class="pagination"><button id="prevPage" class="secondary">上一页</button><span id="pageInfo"></span><button id="nextPage" class="secondary">下一页</button></div></section>
+</div><div class="dashboard-right">
+<section class="panel"><div class="panelhead"><h2>本组案例对照</h2><small id="chartCount"></small></div><p id="scopeCaption" class="help"></p><div id="caseBars" class="bars"></div><p class="help">按来源顺序展示前 8 条，不是最低碳排名。</p></section>
+<section class="panel"><div class="panelhead"><h2>本组分布</h2><span class="pill">无行业评级</span></div><div id="gauge"></div><div class="stat-line"><span>中位数 <b id="median">—</b></span><span>范围 <b id="range">—</b></span></div><p id="sampleWarning" class="help"></p></section>
+</div></div>
+<section class="panel" id="comparison"><div class="panelhead"><h2>已选案例并排对照</h2><button id="clearCompare" class="secondary">清空</button></div><div id="comparisonContent"><p class="help">在列表中勾选案例，或点击「选取本组前 2 条对照」。</p></div></section>
+<section class="panel" id="caseDetail" hidden></section>
+<details class="panel" id="method"><summary>数据来源、计算方式与比较限制</summary><div class="method-content">
+<h3>真实数据来源</h3><p id="sourceInfo"></p><p>页面使用公开欧洲数据库，不是 B+G 的内部项目数据库。保留匿名项目编号，不补造项目名称、照片、城市、跨度或荷载。</p>
+<h3>数值如何得到</h3><p>原始单位为 kg CO₂e/m²/年。原研究期强度 = 年化强度 × 该记录研究年限。年化指标是分摊表达，并不意味着材料生产排放每年重复发生。</p><p>优先使用汇总前数据中的阶段年化值；若只有阶段总量，则除以原记录建筑总面积和研究年限；若只有分项，必须所有所需分项齐全才相加。缺失值不按零补齐，负值和明确的零值保留。A1–A3 + C3–C4 不等于全生命周期排放。</p><p>公开特征工程表使用过缺项补零汇总，因此本页另关联汇总前数据核对证据。特征表中存在但证据不完整的数值只供详情追溯，不纳入统计。不能唯一关联的记录保留浏览、排除比较。</p>
+<h3>什么叫同口径</h3><p>同组要求国家、用途细类、面积定义、研究年限、九类构件纳入标记、碳因子数据库、软件、项目状态与脱碳情景字段一致。选定阶段必须明确纳入且结果完整。面积定义为 Other / 空白、关键字段未知、重复项目编号均不参与组内统计。原记录隐含碳合计还要求生命周期阶段标记一致，并检查 D 的处理方式。</p><p>这只是按公开字段进行可比性初筛。相同字段不能证明模型假设、荷载、性能、数据年份或生物碳方法等完全一致。未知脱碳情景会明确提示；不得据此宣称某种结构必然减碳或推算中国项目。</p>
+<h3>统计与展示</h3><p>均值、中位数和范围仅针对当前同口径组，按记录等权，不按面积加权；重复编号不重复计权。单条记录不构成对照，小于 5 条提示样本有限。图表随范围与单位同步变化，无评分等级，也不是行业基准。</p><p>原记录隐含碳合计按来源已有范围展示，不补齐 B1–B7 或 C1–C4，不称作完整建筑碳核算。模块 D 单列。资料是历史研究数据，不是当前实时市场碳因子。</p>
+<h3>署名与再使用</h3><p>Röck and Sorensen, Embodied Carbon of European Buildings Database (EU-ECB-DB), 2022. <a href="https://doi.org/10.5281/zenodo.6671558" target="_blank" rel="noopener">数据库 DOI</a> · <a href="https://doi.org/10.5281/zenodo.6120522" target="_blank" rel="noopener">研究报告 1</a> · <a href="https://doi.org/10.5281/zenodo.5895051" target="_blank" rel="noopener">研究报告 2</a>。</p><p>数据及本页衍生数据输出按 <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> 提供。改动：字段裁剪、空值规范化、记录关联、中文标签与分组统计；未保留联系人字段。木材时间线是独立模块，没有参与这里的案例统计。</p>
+</div></details>
+</div></main><footer>CarbonLoop · EU-ECB 公开数据 / Röck & Sorensen (2022) · <a href="#method">来源与许可</a></footer></div></body></html>

@@ -1,0 +1,13 @@
+.manual-only{display:none!important}
+.flow-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+#app[data-step="3"] #flowDescription:empty{display:none}
+#resultModelDetails{display:none!important}
+#editFeedback{padding:16px 18px;border:1px solid #345348;background:#172c27;border-radius:7px}
+.feedback-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.feedback-heading span{font-size:10px;color:var(--muted)}#editFeedbackText{margin:12px 0;font-size:14px;line-height:1.7}.feedback-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.feedback-actions .text-button{font-size:12px;color:#edc78c}
+#workbenchAssistant{width:min(740px,calc(100% - 28px))}#workbenchAssistant .ai-panel{padding-top:18px;margin:0}#workbenchAssistant .ai-panel>.panelhead{display:none}#workbenchAssistant .ai-panel>hr{display:none}
+#modelEntry .entry-heading .eyebrow{display:none}#modelEntry .entry-steps{margin-bottom:16px}#modelEntry .entry-scope label{padding:12px}#modelEntry .entry-scope label input{align-self:center}#entryEmpty{font-size:13px}#entryEmpty .entry-selection-counts{margin-top:15px}#entryEmpty .eyebrow{display:none}#entryRecognition{display:none}#entryProgress{font-size:12px}#entryCorrections>summary{display:none}#entryCorrections{border:0;padding:0}
+#modelEntry[data-phase="setup"] .entry-legend{display:none}#entryRead{width:100%}#entryReview>h3{margin-bottom:12px}.entry-component-table td strong{font-size:11px}.entry-component-table td>span:not(.entry-row-status),.entry-component-table td>small{display:none}#entrySelectedLabel{font-size:12px}
+#entryObjectList{margin:8px 0}.entry-footer{padding:14px 18px}#productHelp h3{font-size:16px}
+#modelEntry[data-phase="setup"] #entrySelectedLabel{display:none}
+@media(min-width:1000px){#modelEntry[data-phase="review"] .entry-side{max-height:none;overflow:visible}#entryReview .entry-component-table{display:block;max-height:52vh;overflow-y:auto;scrollbar-width:thin}#entryConfirmGroup{position:sticky;bottom:0;width:100%;margin-top:12px;background:#263e36;border-color:#659885}#modelEntry[data-phase="review"] .entry-layout{align-items:start}}
+@media(max-width:640px){header nav{flex-wrap:wrap;justify-content:flex-start;gap:12px 18px}.feedback-heading{align-items:flex-start}.feedback-actions{gap:12px}#editFeedback{padding:14px}}

@@ -1,0 +1,19 @@
+* text=auto
+*.js text eol=lf
+*.cjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.cs text eol=lf
+*.csproj text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.py text eol=lf
+*.csv text eol=lf
+*.rhi binary
+*.yak binary
+*.zip binary
+*.pdf binary
+*.xlsx binary
+*.3dm binary

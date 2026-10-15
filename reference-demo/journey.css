@@ -1,0 +1,20 @@
+.product-journey{margin-bottom:18px;border:1px solid var(--line);border-radius:8px;background:#121c22;overflow:hidden}
+.product-journey ol{list-style:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:0;padding:0;border-bottom:1px solid var(--line)}
+.product-journey li{position:relative;display:flex;align-items:center;gap:9px;min-width:0;padding:13px 14px;color:#788b92;font-size:11px;border-right:1px solid #26353d}
+.product-journey li:last-child{border-right:0}
+.product-journey li::before{content:attr(data-number);display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;border:1px solid #43555d;border-radius:50%;font-size:10px;font-variant-numeric:tabular-nums}
+.product-journey li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-journey li[data-state="done"]{color:#afc0c3}
+.product-journey li[data-state="done"]::before{content:"✓";border-color:#55786c;color:var(--accent);background:#1d332c}
+.product-journey li[data-state="current"]{color:var(--text);background:#1b2c2d}
+.product-journey li[data-state="current"]::before{border-color:var(--accent);background:var(--accent);color:#132820;font-weight:700}
+.product-journey li[data-state="current"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent)}
+.journey-current{display:flex;align-items:center;gap:14px;padding:13px 16px}
+.journey-current>span{color:var(--accent);font-size:10px;letter-spacing:.8px;white-space:nowrap}
+.journey-current b{display:block;font-size:13px;font-weight:600}
+.journey-current p{margin-top:2px;color:var(--muted);font-size:11px}
+/* One journey bar is enough. The old page-level steppers remain available to scripts but are not shown. */
+#welcome,.flow-steps,#modelEntry .entry-steps{display:none!important}
+#app[data-step="4"] #export{display:none!important}
+@media(max-width:900px){.product-journey ol{display:flex;overflow-x:auto}.product-journey li{min-width:130px}.journey-current{align-items:flex-start}}
+@media(max-width:640px){.product-journey li{min-width:116px;padding:11px 10px}.product-journey li::before{width:20px;height:20px;flex-basis:20px}.journey-current{padding:12px;gap:10px}.journey-current p{font-size:10px}}

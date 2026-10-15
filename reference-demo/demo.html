@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarbonLoop · 模型碳分析工作台</title><link rel="stylesheet" href="demo.css?v=20261015-rc1"><link rel="stylesheet" href="structure.css?v=20261005-workbench-1"><link rel="stylesheet" href="model-entry.css?v=20261005-workbench-1"><script defer src="material-estimate.js?v=20261005-workbench-1"></script><script defer src="model-core.js?v=20261015-rc1"></script><script defer src="rhino-contract.js?v=20261011-rhino-sync-1"></script><script defer src="material-intake.js?v=20261012-natural-stone-1"></script><script defer src="structure.js?v=20261005-workbench-1"></script><script defer src="model-entry.js?v=20261015-rc1"></script><script defer src="change-core.js?v=20261005-workbench-1"></script><script defer src="demo.js?v=20261015-rc1"></script><script defer src="rhino-live.js?v=20261015-rc1"></script><link rel="stylesheet" href="ai-panel.css?v=20261005-workbench-1"><script defer src="ai-core.js?v=20261005-workbench-1"></script><script defer src="ai-panel.js?v=20261006-change-ai-4"></script><link rel="stylesheet" href="change-view.css?v=20261007-journey-1"><script defer src="change-view.js?v=20261007-journey-1"></script><link rel="stylesheet" href="workbench-ui.css?v=20261007-contract-2"><script defer src="workbench-ui.js?v=20261007-contract-2"></script><link rel="stylesheet" href="journey.css?v=20261007-journey-1"></head>
+<body>
+<script src="excel-export.js?v=20261006-1"></script>
+<link rel="stylesheet" href="structural-review.css?v=20261007-rag-1">
+<script defer src="structural-rulebook.js?v=20261006-rules-1"></script>
+<script defer src="structural-screening-core.js?v=20261006-rules-1"></script>
+<script defer src="structural-review-core.js?v=20261006-checks-6"></script>
+<script defer src="structural-review-ui.js?v=20261007-rag-1"></script>
+<link rel="stylesheet" href="interaction-shell.css?v=20261005-interaction-1">
+<link rel="stylesheet" href="object-workspace.css?v=20261015-rc1">
+<script defer src="interaction-shell.js?v=20261006-inline-7"></script>
+<script defer src="edit-feedback.js?v=20261007-rag-proof-1"></script>
+<script defer src="solution-core.js?v=20261006-solutions-1"></script>
+<script defer src="solution-panel.js?v=20261007-solution-flow-1"></script>
+<script defer src="solution-attachment.js?v=20261006-solution-images-2"></script>
+<script defer src="journey.js?v=20261007-journey-1"></script>
+<link rel="stylesheet" href="solution-panel.css?v=20261007-solution-flow-1">
+<link rel="stylesheet" href="comparison-decision.css?v=20261007-decision-1">
+<script defer src="comparison-decision.js?v=20261007-decision-1"></script>
+<header><a class="brand" href="demo.html"><span class="brand-mark">C</span> CarbonLoop <small>设计决策工作台</small></a><nav aria-label="主导航"><a href="demo.html" aria-current="page">模型分析</a><a href="dashboard.html">案例参考</a><a href="index.html">木材时间线</a><a href="rhino-setup.html">Rhino 连接</a><button class="text-button" data-open="evidence">计算依据 ↗</button></nav></header>
+<main>
+<div class="page-heading"><div><p class="eyebrow">MODEL / MATERIAL / CARBON</p><h1>模型碳分析</h1></div><span class="status">● 本地示例 · 未连接 Rhino</span></div>
+<section class="product-journey" id="productJourney" aria-label="产品分析流程"><ol id="journeySteps"></ol><div class="journey-current"><span id="journeyStage">第 1 步</span><div><b id="journeyTitle">选择范围</b><p id="journeyDescription">选择整个模型、某一楼层或部分构件。</p></div></div></section>
+<section class="start" id="start"><div><p class="eyebrow">RHINO 插件入口 · 交互演示</p><h2>选择这次要分析的模型范围</h2><p>选择整个模型、某一楼层或部分构件。</p></div><button id="load">开始分析 →</button></section>
+<div id="welcome" class="welcome"><span class="step-number">01</span><p><b>选择范围</b><br>整个模型或选中部分</p><span class="step-number">02</span><p><b>读取与整理</b><br>查看构件和材料建议</p><span class="step-number">03</span><p><b>核对后分析</b><br>缺项不当作零排放</p></div>
+<section id="modelEntry" hidden aria-labelledby="entryTitle"></section>
+<div id="app" hidden>
+<nav class="flow-steps" aria-label="分析步骤"><button data-step="1">01 <span>碳分析结果</span></button><button data-step="2">02 <span>探索改进</span></button><button data-step="3" disabled>03 <span>调整并看变化</span></button><button data-step="4" disabled>04 <span>对比与保留</span></button></nav>
+<section class="flow-guide panel" aria-live="polite"><div><p class="eyebrow" id="flowKicker"></p><h2 id="flowTitle"></h2><p id="flowDescription"></p></div><div class="flow-actions"><button id="flowBack" class="outline" hidden>上一步</button><button id="flowNext"></button></div></section>
+<section id="explore" class="panel explore" hidden><h2>减少用量，还是更换材料配方？</h2><p class="help">两种方式都可以试。原模型保持不变，修改后立即对比碳排；一次先改一项更容易看清原因。</p><h3>改尺寸 · 手动试调材料用量</h3><div class="direction-options"><label><input type="radio" name="direction" value="slab" checked><b>调整楼板厚度</b><span>观察材料用量变化，再检查变形与承载要求。</span></label><label><input type="radio" name="direction" value="column"><b>调整柱截面</b><span>方柱改边长，演示钢柱改翼缘厚度。</span></label><label><input type="radio" name="direction" value="wall"><b>调整墙体厚度</b><span>保持墙长、高度与中心位置不变。</span></label></div><p class="inherited-note">比较约束：初始跨度、柱高、构件数量与已填荷载、支座条件保持一致。改变条件后会单独提示，不再视为同条件比较。</p><p class="help">以下是手动几何探索，不是 AI 自动优化。展开上方材料助手可尝试更换配方；两者都不能代替结构求解与专业复核。</p><button id="copy">创建改进草案 →</button><p id="candidateExists" class="help" hidden>改进草案已存在。返回“调整并看变化”继续编辑，不会覆盖你的修改。</p></section>
+<div class="project-bar"><div><b>示例项目 / 单跨结构单元</b><span id="sourceLabel">内置示例几何 · 单位 m</span><span id="entryCoverage" class="help"></span></div><div class="scenario-tools"><button id="recheckModel" class="outline">查看 / 修正核对记录</button><div class="tabs" aria-label="当前方案"><button id="tabA" aria-pressed="true">碳分析结果</button><button id="tabB" aria-pressed="false" disabled>改进草案</button></div><button id="export" class="outline" disabled>下载数据与依据 ↓</button></div></div>
+<section id="candidateReview" class="panel candidate-review" hidden><div class="panelhead"><h2>候选方案检查</h2><span id="reviewState" class="mini-tag">待检查</span></div><div class="review-grid"><div><h3>碳排放</h3><p id="carbonReview"></p></div><div><h3>结构与使用条件</h3><p id="engineeringReview"></p></div><div><h3>能否采用？</h3><p>尚不能判断。结构求解与规范校核未执行，即使碳排更低，也只是一份待验证草案。</p></div></div><p id="conditionsReview" class="help"></p><details><summary>查看待补充或冲突的输入</summary><ul id="reviewIssues"></ul></details><div class="flow-actions"><button id="checkCandidate">调整并看变化输入</button><button id="editCandidateStructure" class="outline">补充候选的结构条件 ↗</button></div></section>
+<div class="workspace">
+<aside class="controls panel" aria-label="项目与构件设置">
+<div class="section-label"><span>01 / 输入与调整</span><span class="mini-tag">示例数据</span></div>
+<details class="project-details"><summary>项目与计算范围</summary><dl class="project-data"><dt>分析对象</dt><dd>一块楼板＋四根柱</dd><dt>示例尺寸</dt><dd>6 × 4 m；柱高 3 m</dd><dt>项目地点</dt><dd>未指定</dd><dt>参考数据地区</dt><dd>瑞士 · KBOB</dd><dt>面积口径</dt><dd>24 m² 楼板平面，非整栋建筑面积</dd><dt>计算阶段</dt><dd>材料生产＋处置</dd></dl><p class="help">当前不输出整栋建筑的每平方米指标。地点、用途及真实项目范围将在接入实际模型时确认。</p></details>
+<div class="inspector"><div class="selected-heading"><div><p class="eyebrow">当前构件</p><h2 id="elementName"></h2></div><span id="elementId" class="mini-tag"></span></div>
+<div class="parameter"><label class="field" id="dimensionLabel" for="dimension">几何参数</label><p id="dimensionValue"></p><input id="dimension" type="range" step="10"><p id="editHint" class="help"></p></div>
+<dl id="geometry"></dl>
+<label class="field" for="material">材料匹配 <span>需核对</span></label><select id="material"><option value="concrete">建筑混凝土 · KBOB 通用</option><option value="unknown">未确认材料</option></select><p class="help">由示例预设，不是自动识别。仅已验证的混凝土条目可计算。</p>
+<details class="calculation-detail"><summary>查看数量换算与公式</summary><div id="formula"></div></details></div>
+</aside>
+<div class="center-column">
+<section class="viewer panel"><div class="section-label"><span>02 / 模型与构件</span><label><input id="heat" type="checkbox" checked> 按碳贡献着色</label></div><div class="view-caption"><span>轴测视图</span><span>点击构件，左侧查看与调整</span></div><svg id="model" viewBox="0 0 700 440" role="img" aria-label="可选择的楼板与四根柱轴测示意"></svg><div class="legend"><span><i class="hot"></i>贡献较高</span><span><i class="cool"></i>贡献较低</span><span><i class="unknown"></i>缺计算资料</span><span>蓝色轮廓：已选</span></div><div id="elements" class="element-list" aria-label="构件列表"></div><div class="model-footnote">固定示例视图 · 非 Rhino 实时模型</div></section>
+<section class="comparison panel" id="comparison"><div class="panelhead"><h2>方案对比</h2><span class="help">相同构件 · 相同计算边界 · 因子变化明确列出</span></div><div id="comparisonBody"></div><p class="help comparison-note">数值变化是情景试算，不代表结构上可实施的减排方案。</p></section>
+</div>
+<aside class="results panel" aria-label="碳排放结果"><div class="section-label"><span>03 / 结果与判断</span><span id="resultTitle"></span></div>
+<div class="total-result"><span>已计入部分小计</span><strong id="total">—</strong><small>kg CO₂e · 各材料生产＋处置</small></div><p id="liveDelta" class="live-delta" role="status"></p>
+<div class="stage-values"><div><span>生产</span><b id="production">—</b></div><div><span>处置</span><b id="disposal">—</b></div></div>
+<div class="element-result"><span id="selectedResultName">选中构件的排放</span><strong id="elementCarbon">—</strong><small>kg CO₂e</small></div>
+<div class="contribution"><h2>排放来自哪里？</h2><p class="help">点击条形，定位对应构件</p><div id="contributions"></div><p id="hotspot" class="help"></p></div>
+<div class="coverage"><span id="coverage" class="mini-tag"></span><p id="missing" role="status"></p></div>
+<div class="warning"><b>钢筋及其他阶段未计入</b><p>当前小计不是完整结构或全生命周期结果。</p></div>
+<button class="review-button" data-open="structure">结构分析与校核 <span id="structureBadge">准备输入 ↗</span></button>
+</aside>
+</div>
+</div>
+<footer><span>CarbonLoop / 构件级情景比较</span><span>示例计算 · 结果不替代专业复核 <button class="text-button" data-open="evidence">范围与依据 ↗</button></span></footer>
+</main>
+<dialog id="evidence" aria-labelledby="evidenceTitle"><div class="dialog-heading"><div><p class="eyebrow">METHOD & SOURCES</p><h2 id="evidenceTitle">计算依据与适用范围</h2></div><button class="close-dialog outline" aria-label="关闭计算依据">关闭 ×</button></div><div class="dialog-body">
+<h3>01 · 这个版本算了什么？</h3><p>内置两层、多材料的演示模型，尚未连接 Rhino。只汇总所选构件的材料生产与处置。钢柱的显示方框是外包轮廓，计算采用演示 I 形截面净量；其他构件使用简化体积，未扣墙体洞口，不包含砂浆和未建模钢筋。几何、截面和楼层标签是演示假设，不是真实项目或结构设计。</p>
+<h3>02 · 每个数字怎样得到？</h3><p>净材料体积 × 对应密度＝重量；重量 × 对应碳因子＝排放。钢柱用净截面积 × 长度，不把外包方框当成实心。真实模型应读取有效实体净体积或材料工程量。每个构件的“展开数量、因子与来源”中可查看完整公式。</p><p>来源：KBOB/ecobau 2022 Version 9.0；工作表 Baumaterialien Matériaux。F 列为密度，AA / AB 分别为每千克材料的生产 / 处置排放。当前核对 15 条来源记录，覆盖混凝土、钢材、木材、砌体、无镀膜平板玻璃、裸铝型材、石膏板和抛光天然石材；通用分类会明确标注代理假设，不冒充具体牌号或产品 EPD。</p><p>这些是瑞士参考值，不代表项目地区、供应商和配方。预制混凝土暂用通用无筋混凝土代理，不能据此判断预制工艺的减排优势。木材 AC 列是 kg C 碳含量，单独保留，不作为负排放扣减；处置汇总列不擅自拆成 C1–C4。</p>
+<h3>03 · 哪些仍然未知？</h3><p>钢筋、现场运输、施工、更换、运营等未计入；缺失材料不算作零排放。A/B 任一方案缺少材料映射时，暂停差值与百分比比较。构件映射完整不等于生命周期完整。</p>
+<h3>04 · 原型与真实接入</h3><p>Rhino 8 插件可以发送当前选择、当前图层或整个模型，并在对象、图层或材料变化后自动同步；网页按语义规则整理后由建筑师核验。碳计算始终由程序执行；已配置 DeepSeek 时，AI 只解释结果、检索依据和辅助提出候选，不改写计算数字。结构安全仍需结构模型、求解器与专业复核。</p>
+<h3>05 · 设计参考</h3><p>界面借鉴木材时间线的参数—结果布局；参考 Structural Carbon Bot 将几何、结构信息和碳分析联系起来的研究思路。本页不是该产品的官方界面，也未实现其模型训练与结构判断。</p><p class="source-links"><a href="https://www.kbob.admin.ch/fr/donnees-ecobilans-dans-la-construction" target="_blank" rel="noopener">KBOB 官方数据 ↗</a><a href="https://www.bollinger-grohmann.com/en.bg-space.html" target="_blank" rel="noopener">B+G 研究介绍 ↗</a><a href="material-check.html">内部计算校验 ↗</a></p>
+</div></dialog>
+<dialog id="structure" aria-labelledby="structureTitle"><div class="dialog-heading"><div><p class="eyebrow">STRUCTURAL CHECK</p><h2 id="structureTitle">碳排变化 ≠ 结构可行</h2></div><button class="close-dialog outline" aria-label="关闭结构校核">关闭 ×</button></div><div class="dialog-body"><p>当前没有结构分析结果。楼板变薄会减少材料，但是否仍满足使用要求，需要额外数据和工程复核。</p><table><thead><tr><th>结构信息</th><th>当前状态</th></tr></thead><tbody><tr><td>构件几何与数量</td><td>内置示例可读</td></tr><tr><td>材料强度、钢筋配置</td><td>未提供</td></tr><tr><td>荷载、支座与连接条件</td><td>未提供</td></tr><tr><td>承载力、变形与耐火验算</td><td>未执行</td></tr></tbody></table><p>后续验证方向：接入 Rhino / Grasshopper 的真实构件数据，再与结构分析结果对应。只有取得相应验算依据，才能判断一个减排调整是否可实施。</p></div></dialog>
+</body></html>

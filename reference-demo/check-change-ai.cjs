@@ -1,0 +1,29 @@
+const assert=require('node:assert/strict'),{chromium}=require('playwright');
+(async()=>{const b=await chromium.launch({channel:'msedge',headless:true});try{
+ const p=await b.newPage({viewport:{width:1440,height:1100}}),errors=[],requests=[];let version=5,held=null,hold=false;
+ p.on('pageerror',e=>errors.push(e.message));
+ await p.route('http://127.0.0.1:8514/**',async r=>{
+  if(r.request().url().endsWith('/health'))return r.fulfill({json:{configured:true,provider:'DeepSeek',model:'deepseek-flash',changeReviewVersion:version,...(version>=5?{rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0'}:version>=4?{rulebookVersion:'au-early-design-0.1.0'}:{})}});
+  assert.ok(r.request().url().endsWith('/structural-review'),'default assistant must not call material recipe endpoint');
+  const body=r.request().postDataJSON();requests.push(body);const reason=body.after.h>body.before.h?'加厚使材料用量增加，需要核实新增重量如何传到支承。':'减薄使材料用量减少，需要检查承载能力和变形。';
+  const respond=()=>r.fulfill({json:{mode:'live_ai',provider:'MOCK',report:{rag:{retrievedEvidence:[{id:'CL-RULE-THICKER-SLAB',source_title:'CarbonLoop 前期结构知识规则包',locator:'ED-SLAB-THICKER',source_url:null,authority:'early_design_screening',project_applicability:'candidate_reference_only'}]}},answer:{status:'not_determined',priorityCheckIds:['analysis','resistance'],nextData:'荷载与支承',reason,nextStep:'先确认支承位置、有效跨度和楼面用途。',citationIds:['CL-RULE-THICKER-SLAB']}}}).catch(()=>{});
+  if(hold){held=respond;return;}return respond();
+ });
+ await p.goto('http://127.0.0.1:8513/demo.html');await p.click('#entryRead');await p.click('#entryConfirmGroup');await p.click('#entryContinue');await p.click('#reportExplore');
+ const edit=async n=>{await p.fill('#dimensionInput',String(n));await p.press('#dimensionInput','Tab');};
+ await edit(300);await p.click('#decision-assistant');await p.waitForFunction(()=>StructuralReviewUI.exportState().configured);
+ assert.equal(await p.inputValue('#aiTask'),'change');assert.match(await p.textContent('#aiScope'),/200 → 300 mm（加厚 10 厘米）/);assert.match(await p.textContent('#aiChangeFacts'),/50%/);assert.equal(requests.length,0);assert.ok(await p.isDisabled('#aiGenerate'));
+ await p.check('#aiConsent');await p.fill('#aiRequest','我加厚十厘米，这样改有什么影响？');await p.click('#aiGenerate');await p.waitForFunction(()=>!document.getElementById('aiChangeAnswer').hidden);
+ assert.equal(requests.length,1);assert.equal(requests[0].before.h,.2);assert.equal(requests[0].after.h,.3);assert.match(requests[0].query,/加厚十厘米/);assert.match(await p.textContent('#aiChangeReason'),/加厚/);assert.match(await p.textContent('#structuralReason'),/加厚/);
+ await edit(180);assert.equal(await p.isVisible('#aiChangeAnswer'),false);assert.equal(await p.evaluate(()=>StructuralReviewUI.exportState().ai_result),null);assert.equal(requests.length,1);
+ await p.click('#decision-structure');assert.ok(await p.isVisible('#structuralAuto'));await p.check('#structuralAuto');await p.waitForFunction(()=>!document.getElementById('structuralAnswer').hidden);assert.equal(requests.length,2);assert.equal(requests[1].after.h,.18);assert.match(await p.textContent('#structuralReason'),/减薄/);
+ await edit(260);await edit(270);await edit(280);await p.waitForFunction(()=>!document.getElementById('structuralAnswer').hidden);assert.equal(requests.length,3);assert.equal(requests[2].after.h,.28);
+ await p.uncheck('#structuralAuto');await p.click('#decision-assistant');await edit(300);hold=true;await p.click('#aiGenerate');await p.waitForTimeout(300);await edit(180);assert.ok(held);await held();hold=false;await p.waitForTimeout(100);assert.equal(await p.isVisible('#aiChangeAnswer'),false);
+ await p.locator('#aiImageDetails summary').click();const png=await p.locator('#model').screenshot();await p.setInputFiles('#aiImage',{name:'model.png',mimeType:'image/png',buffer:png});await p.waitForFunction(()=>document.getElementById('aiImageStatus').textContent.includes('尚未发送'));assert.equal(await p.isChecked('#aiConsent'),false);await p.check('#aiConsent');await p.click('#aiGenerate');await p.waitForFunction(()=>!document.getElementById('aiChangeAnswer').hidden);assert.match(requests.at(-1).image,/^data:image\/png;base64,/);assert.equal(requests.at(-1).after.h,.18);
+ await p.click('[data-component-id="C03"]');assert.equal(await p.isDisabled('#aiGenerate'),true);assert.equal(await p.isVisible('#aiChangeAnswer'),false);await p.click('[data-component-id="S01"]');await p.click('#aiImageRemove');
+ await p.selectOption('#aiTask','material');assert.match(await p.textContent('#aiTaskIntro'),/不是厚度调整建议/);assert.equal(await p.isVisible('#aiChangeFacts'),false);await p.selectOption('#aiTask','change');
+ version=3;await p.click('#aiReconnect');await p.waitForFunction(()=>document.getElementById('aiNotice').textContent.includes('当前仍是旧连接'));assert.equal(await p.isDisabled('#aiGenerate'),true);
+ version=5;await p.click('#aiReconnect');await p.waitForFunction(()=>StructuralReviewUI.exportState().configured);await edit(300);await p.click('#aiGenerate');await p.waitForFunction(()=>!document.getElementById('aiChangeAnswer').hidden);await p.screenshot({path:'change-ai-desktop.png',fullPage:true});
+ for(const width of [1024,768,390]){await p.setViewportSize({width,height:1100});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+width);}await p.screenshot({path:'change-ai-mobile.png',fullPage:true});assert.deepEqual(errors,[]);
+ console.log('PASS change-specific assistant, 10 cm and 50% calculation, explicit consent, auto debounce, shared result, stale-response rejection, screenshots, unsupported material, legacy-service warning, responsive widths. Mock calls only.');
+ }finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1});

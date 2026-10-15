@@ -1,0 +1,44 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+ const p=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await require('./test-baseline-route.cjs')(p);
+ await p.goto('http://127.0.0.1:8513/demo.html');
+ 
+ assert.equal(await p.locator('#entrySetup').isVisible(),true);assert.equal(await p.locator('#start').isVisible(),false);
+ assert.equal(await p.locator('#entryRead').textContent(),'读取这 5 个构件 →');
+ assert.equal(await p.locator('#entryEmpty').isVisible(),true);assert.equal(await p.locator('#entryDetail').isVisible(),false);
+ const panels=await p.locator('.entry-layout > section').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().x));assert.ok(panels[0]<panels[1]&&panels[1]<panels[2]);
+ await p.screenshot({path:'model-entry-start-desktop.png',fullPage:true});
+ assert.equal(await p.locator('#app').isVisible(),false);
+ assert.ok((await p.locator('#modelEntry').textContent()).includes('Rhino 接入协议 · 插件未连接'));
+ await p.check('[name="entryScope"][value="selection"]');assert.equal(await p.locator('#entryRead').isDisabled(),true);
+ await p.check('[data-pick="C02"]');await p.click('#entryRead');
+ assert.equal(await p.locator('.entry-row').count(),1);assert.ok((await p.locator('#entryGeometry').textContent()).includes('0.480 m³'));
+ assert.equal(await p.locator('#entryContinue').isDisabled(),true);await p.click('#entryConfirmOne');await p.click('#entryContinue');
+ assert.equal(await p.locator('#model g[data-id]').count(),1);assert.equal(await p.locator('#elementId').textContent(),'C02');
+ assert.equal(await p.locator('#total').textContent(),(0.48*2300*.1013).toLocaleString('zh-CN',{maximumFractionDigits:2}));
+ await p.click(await p.locator('#carbonReport').isVisible()?'#reportExplore':'#flowNext');assert.equal(await p.locator('[name="direction"][value="slab"]').isDisabled(),true);
+ assert.equal(await p.locator('#elementId').textContent(),'C02');
+ await p.click('#recheckModel');assert.equal(await p.locator('#entryReadonly').isVisible(),true);assert.equal(await p.locator('#entryType').isDisabled(),true);await p.click('#entryContinue');
+ assert.equal(await p.locator('#app').getAttribute('data-step'),'3');
+ await p.reload();await p.click('#entryRead');
+ assert.equal(await p.locator('.entry-row').count(),5);await p.click('#entryObjectList summary');await p.click('[data-group="beam"]');assert.ok((await p.locator('#entryRows').textContent()).includes('没有构件'));
+ await p.click('[data-group="column"]');assert.equal(await p.locator('.entry-row').count(),4);await p.click('[data-row="C03"]');
+ assert.equal(await p.locator('#entryModel [data-entry-id="C03"]').getAttribute('aria-pressed'),'true');
+ await p.click('#entryConfirmGroup');assert.equal(await p.locator('#entryContinue').isDisabled(),true);
+ await p.click('[data-group="pending"]');assert.equal(await p.locator('.entry-row').count(),1);
+ await p.selectOption('#entryMaterial','unknown');assert.equal(await p.locator('#entryConfirmOne').isDisabled(),true);
+ await p.check('#entryPartial');await p.screenshot({path:'model-entry-desktop.png',fullPage:true});
+ for(const width of [1280,1024,768,390]){await p.setViewportSize({width,height:900});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'overflow '+width);}
+ await p.screenshot({path:'model-entry-mobile.png',fullPage:true});
+ await p.click('#entryContinue');assert.ok((await p.locator('#coverage').textContent()).includes('4 / 5'));assert.ok((await p.locator('#missing').textContent()).includes('不能输出完整'));
+ const [dl]=await Promise.all([p.waitForEvent('download'),p.click('#export')]);const result=JSON.parse(fs.readFileSync(await dl.path(),'utf8'));
+ assert.equal(result.model_entry.confirmed_count,4);assert.equal(result.model_entry.ai_connected,false);assert.equal(result.model_entry.rhino_connected,false);assert.equal(result.model_entry.partial_acknowledged,true);assert.equal(result.A.elements[0].material,'unknown');assert.equal(result.A.result.known,4);
+ await p.click('#recheckModel');await p.selectOption('#entryMaterial','concrete');await p.click('#entryConfirmOne');
+ assert.equal(await p.locator('#entryContinue').isEnabled(),true);await p.selectOption('#entryType','beam');assert.equal(await p.locator('#entryTypeState').textContent(),'待确认');assert.equal(await p.locator('#entryContinue').isDisabled(),true);
+ await p.click('#entryConfirmOne');await p.click('#entryContinue');assert.ok((await p.locator('#coverage').textContent()).includes('5 / 5'));
+ await p.click(await p.locator('#carbonReport').isVisible()?'#reportExplore':'#flowNext');await p.locator('#elements [data-id="S01"]').click();assert.equal(await p.locator('#dimension').isDisabled(),true);
+ await p.reload();await p.click('#entryRead');await p.click('#entryConfirmGroup');await p.click('#entryRangeSummary');assert.equal(await p.locator('#entryReview').isVisible(),true);
+ assert.equal(await p.locator('#entrySetup').isVisible(),true);assert.equal(await p.locator('#entryDetail').isVisible(),true);assert.match(await p.textContent('#entrySummary'),/已确认 5/);await p.click('#entryCancel');assert.equal(await p.locator('#load').isVisible(),true);await p.click('#load');assert.equal(await p.locator('#entrySetup').isVisible(),true);
+ assert.deepEqual(errors,[]);console.log('PASS model entry: sample disclosure, empty/partial selection, per-group/individual confirmation, linked geometry, missing-data gate, corrections invalidate, export provenance, subset candidate, readonly baseline, retained range confirmations and responsive layouts');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

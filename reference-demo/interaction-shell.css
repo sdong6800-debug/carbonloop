@@ -1,0 +1,62 @@
+/* Single editing workspace: controls | persistent model | contextual results. */
+body[data-product-step="3"] .page-heading{display:none}
+#app[data-step="3"] .workspace{grid-template-columns:minmax(225px,260px) minmax(300px,1fr) minmax(300px,360px);gap:18px;align-items:start}
+#app[data-step="3"] .project-bar{padding:0 4px;font-size:12px;color:var(--muted)}
+#app[data-step="3"] .project-bar .scenario-tools,#app[data-step="3"] .project-bar .tabs{display:none}
+#app[data-step="3"] .flow-guide{background:transparent;border:0;padding:6px 0;min-height:44px}
+#app[data-step="3"] .flow-guide h2{font-size:20px}#app[data-step="3"] .flow-guide #flowBack{border:0;color:var(--muted);padding-left:0}
+#app[data-step="3"] .controls{padding:20px}#app[data-step="3"] .results{padding:0;display:block;min-width:0;overflow:hidden}
+#app[data-step="3"] .results>#decisionRail{display:block}#app[data-step="3"] .results>#changeImpact{display:none}
+#app[data-step="3"] .center-column{position:sticky;top:18px;min-width:0}
+#app[data-step="3"] .viewer{padding:18px}#app[data-step="3"] .viewer svg{width:100%;height:clamp(260px,32vw,430px);min-height:0;max-height:none}
+#app[data-step="3"] .viewer .view-caption,#app[data-step="3"] .viewer .model-footnote{display:none}
+#app[data-step="3"] .viewer .section-label{font-size:12px;letter-spacing:0}
+#app[data-step="3"] .viewer .section-label label{font-size:10px;white-space:nowrap}
+#app[data-step="3"] .legend{font-size:10px;gap:12px}
+#editFeedback{display:none!important}
+.decision-tabs{display:flex;border-bottom:1px solid var(--line);padding:4px 10px 0;gap:4px;background:#142027}
+.decision-tabs button{flex:1;font-size:12px;font-weight:500;padding:14px 3px;border:0;border-radius:0;border-bottom:2px solid transparent;color:var(--muted);background:transparent;white-space:nowrap}
+.decision-tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+#decisionRail>[role=tabpanel]{padding:20px;min-width:0}
+#decisionRail .change-impact h2{font-size:15px;font-weight:500;color:var(--muted);margin:0 0 10px}
+#decisionRail #impactChange{font-size:12px;padding:8px 10px;margin:0 0 6px}
+#decisionRail #impactScope{padding-top:14px}#decisionRail #impactScope .impact-delta{font-size:23px;line-height:1.6}
+#decisionRail #impactSelected .impact-delta{font-size:16px}#decisionRail .impact-bar-row>b{font-size:14px}
+#decisionRail .impact-warning,#app[data-step="3"] .legacy-change-list{display:none}
+#app:not([data-step="3"]) #workspaceChanges{display:none}
+#modelEntry .entry-component-table caption{display:none}
+#modelEntry .entry-component-table{width:100%;table-layout:auto}
+#modelEntry[data-phase="review"] #entryReview .entry-component-table{max-height:48vh;margin-top:8px}
+#modelEntry .entry-badge{display:none}
+.structure-status-link{display:block;width:100%;text-align:left;margin-top:16px;background:transparent;color:#e1bd79;border:0;padding:0;font-size:12px;font-weight:400}
+.editor-tabs{display:flex;margin-top:18px;border-bottom:1px solid var(--line);gap:20px}
+.editor-tabs button{padding:8px 0;background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;border-radius:0;font-weight:500}
+.editor-tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+#app[data-step="3"] .parameter{border:0;margin-top:14px;padding-top:0}
+#dimensionValue{font-size:12px;color:var(--muted);margin:6px 0 12px}#dimensionLabel{font-size:14px;color:var(--text)}
+.change-exact{margin-top:12px;grid-template-columns:1fr 92px}.change-exact input{background:#101c22;border-color:#597b70;color:var(--text);font-size:19px;text-align:right;padding:8px}
+.change-exact #resetElement{border:0;color:var(--muted);padding:8px 0;text-align:left;font-size:12px;font-weight:400;justify-self:start}
+.editor-feedback{color:var(--accent);font-size:12px!important;line-height:1.6!important;margin:0 0 12px!important}
+#editorInfo{margin-top:20px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+#editorInfo>summary{cursor:pointer}#editorInfo .change-quantity,#editorInfo .calculation-detail,#editorInfo .parameter-notes{margin:12px 0;padding:10px 0;border-top:1px solid var(--line)}
+#editorMaterial #changeMaterialDetails{border:0;margin-top:12px;padding:0}#editorMaterial #changeMaterialDetails>summary{display:none}
+#editorMaterial #changeMaterialDetails>p,#editorMaterial label[for=material]>span{display:none}
+#editorMaterial label{font-size:12px!important;color:var(--muted)}#editorMaterial select{font-size:13px;padding:10px 8px}
+#editorMaterial .recipe-unavailable>label[for=changeRecipe],#editorMaterial .recipe-unavailable>#changeRecipe{display:none}
+.material-inline-note{font-size:12px;line-height:1.7;color:#e1bd79;margin-top:14px}
+#workspaceChanges{padding:14px 4px;color:var(--muted);font-size:12px}#workspaceChanges>summary{cursor:pointer}
+#workspaceChangesList{display:grid;gap:6px;margin-top:10px}.change-record{display:block;width:100%;text-align:left;background:#192b2f;color:var(--text);border-color:var(--line);font-weight:400;font-size:12px;overflow-wrap:anywhere}
+#decisionStructure #structuralChange{border:0;background:transparent;padding:0}#decisionStructure .feedback-heading{align-items:start}
+#decisionStructure .feedback-heading b{font-size:15px}#decisionStructure #structuralSummary{font-size:13px;margin-top:14px}
+#decisionStructure #structuralChecks{list-style:none;padding:0;margin-top:20px;font-size:12px}#decisionStructure #structuralChecks li{padding:12px 0;border-top:1px solid var(--line)}
+#structuralAISettings{margin-top:16px;font-size:12px;color:var(--muted)}#structuralAISettings .feedback-actions{margin-top:12px}
+#decisionAssistant .ai-panel{padding:0;margin:0;border:0;background:transparent}#decisionAssistant .panelhead{align-items:start;flex-direction:column;gap:8px}#decisionAssistant .ai-panel h2{font-size:16px}#decisionAssistant .ai-panel .eyebrow,#decisionAssistant .ai-panel>hr{display:none}
+#decisionAssistant .ai-panel p{font-size:12px;line-height:1.7}#decisionAssistant #aiRequest{width:100%;min-height:110px;font-size:13px}#decisionAssistant .ai-panel>label{font-size:12px}#decisionAssistant .flow-actions{display:block}#decisionAssistant #aiGenerate{width:100%}
+#assistantSettings{margin:14px 0;font-size:12px;color:var(--muted)}#assistantSettings .ai-consent{font-size:11px;margin:12px 0;line-height:1.7}#assistantSettings button{font-size:12px}
+#decisionAssistant .ai-numbers{grid-template-columns:1fr}#decisionAssistant #aiApply{width:100%;margin-top:12px}
+/* Object workspace overrides are below the legacy responsive rules. */
+body[data-product-step="3"] main{padding-top:12px}#app[data-step="3"] .flow-steps{margin-bottom:2px}
+@media(min-width:1500px){#app[data-step="3"] .workspace{grid-template-columns:270px minmax(400px,1fr) 380px}}
+@media(min-width:1001px) and (max-width:1190px){#app[data-step="3"] .workspace{grid-template-columns:220px minmax(280px,1fr) 300px;gap:12px}#app[data-step="3"] .controls,#decisionRail>[role=tabpanel]{padding:16px}#app[data-step="3"] .controls,#app[data-step="3"] .results,#app[data-step="3"] .center-column{grid-column:auto;grid-row:auto}}
+@media(max-width:1000px){#app[data-step="3"] .workspace{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(300px,1.15fr);gap:14px}#app[data-step="3"] .center-column{grid-column:1/-1;grid-row:1;position:static}#app[data-step="3"] .controls{grid-column:1;grid-row:2}#app[data-step="3"] .results{grid-column:2;grid-row:2}#app[data-step="3"] .viewer svg{height:240px}#workspaceChanges{padding:8px 4px}#app[data-step="3"] .viewer .element-list{display:none}}
+@media(max-width:620px){#app[data-step="3"] .workspace{display:flex;flex-direction:column;gap:12px}#app[data-step="3"] .center-column{order:0;position:sticky;top:0;z-index:5;background:var(--bg)}#app[data-step="3"] .controls{order:1}#app[data-step="3"] .results{order:2}#app[data-step="3"] .viewer{padding:8px 12px;box-shadow:0 4px 12px #0004}#app[data-step="3"] .viewer svg{height:130px}#app[data-step="3"] .viewer .legend,#app[data-step="3"] .viewer .section-label label{display:none}#workspaceChanges{display:none}#app[data-step="3"] .flow-guide{flex-direction:row;align-items:center;gap:8px}#app[data-step="3"] .flow-guide h2{font-size:16px}#app[data-step="3"] .flow-guide .flow-actions{width:auto;gap:8px}#app[data-step="3"] .flow-guide #flowBack{display:none}#app[data-step="3"] .flow-guide button{font-size:12px;padding:8px}#app[data-step="3"] .project-bar{padding:0}#decisionRail>[role=tabpanel]{padding:18px}#app[data-step="3"] .controls{padding:18px}.decision-tabs button{padding:12px 4px;font-size:13px}}

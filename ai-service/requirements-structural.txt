@@ -1,0 +1,2 @@
+# Isolated optional AS 3600:2018 section-capacity engine; not a whole-building solver.
+concreteproperties==0.8.0

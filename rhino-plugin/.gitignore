@@ -1,0 +1,10 @@
+CarbonLoop.Rhino/bin/
+CarbonLoop.Rhino/obj/
+dist/
+staging/
+.build/
+verify-rhi/
+verify-rhi-*/
+verify-ai-*/
+yak-probe/
+*.yak

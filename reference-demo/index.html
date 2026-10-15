@@ -1,0 +1,863 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>Timber Carbon Timeline (Copy)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F1F4F2;
+    --surface:#FFFFFF;
+    --surface-2:#E7ECE8;
+    --ink:#1C2320;
+    --ink-muted:#59645F;
+    --ink-faint:#8A948E;
+    --line:#D3D9D5;
+    --line-strong:#B7C0BB;
+    --accent:#2D5FA3;
+    --accent-ink:#1F4576;
+    --accent-soft:#DDE7F3;
+    --released:#C4622D;
+    --released-ink:#9C4A1D;
+    --released-soft:#F3DFD1;
+    --stored:#2F7A55;
+    --stored-ink:#215C40;
+    --stored-soft:#D9EBE0;
+    --focus:#2D5FA3;
+    --radius-s:4px;
+    --radius-m:8px;
+    --font-display:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --font-mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14181A;
+      --surface:#1B211F;
+      --surface-2:#232A27;
+      --ink:#E8ECE9;
+      --ink-muted:#9BA8A2;
+      --ink-faint:#6C7873;
+      --line:#2B3330;
+      --line-strong:#3A433F;
+      --accent:#7FB0E8;
+      --accent-ink:#AECBF0;
+      --accent-soft:#213247;
+      --released:#E08A52;
+      --released-ink:#F0B084;
+      --released-soft:#3B2A20;
+      --stored:#4FAF7C;
+      --stored-ink:#7FCBA0;
+      --stored-soft:#1E3327;
+      --focus:#7FB0E8;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14181A;
+    --surface:#1B211F;
+    --surface-2:#232A27;
+    --ink:#E8ECE9;
+    --ink-muted:#9BA8A2;
+    --ink-faint:#6C7873;
+    --line:#2B3330;
+    --line-strong:#3A433F;
+    --accent:#7FB0E8;
+    --accent-ink:#AECBF0;
+    --accent-soft:#213247;
+    --released:#E08A52;
+    --released-ink:#F0B084;
+    --released-soft:#3B2A20;
+    --stored:#4FAF7C;
+    --stored-ink:#7FCBA0;
+    --stored-soft:#1E3327;
+    --focus:#7FB0E8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--paper),var(--paper)),
+      repeating-linear-gradient(0deg, transparent, transparent 31px, color-mix(in srgb, var(--ink) 4%, transparent) 32px),
+      repeating-linear-gradient(90deg, transparent, transparent 31px, color-mix(in srgb, var(--ink) 4%, transparent) 32px);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;}
+  a{color:var(--accent-ink);}
+  ::selection{background:var(--accent-soft);}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+  button{font-family:inherit;}
+
+  .page{max-width:1240px;margin:0 auto;padding:28px 24px 64px;}
+
+  .masthead{
+    display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-end;justify-content:space-between;
+    padding-bottom:20px;margin-bottom:24px;border-bottom:2px solid var(--line-strong);
+  }
+  .masthead .kicker{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 8px;
+  }
+  .masthead h1{font-size:28px;font-weight:600;letter-spacing:-.01em;}
+  .masthead p{max-width:56ch;color:var(--ink-muted);margin:8px 0 0;font-size:14px;}
+  .masthead .unit-tag{
+    font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-s);
+    padding:6px 10px;white-space:nowrap;
+  }
+
+  .layout{display:grid;grid-template-columns:minmax(300px,340px) 1fr;gap:20px;align-items:start;}
+  .layout > *{min-width:0;}
+  @media (max-width:880px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);min-width:0;}
+
+  /* ---- Inputs panel ---- */
+  .inputs{padding:4px 0;min-width:0;}
+  fieldset{border:0;margin:0;padding:16px 18px;border-bottom:1px solid var(--line);min-width:0;}
+  fieldset:last-child{border-bottom:0;}
+  legend{
+    font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.02em;
+    text-transform:uppercase;color:var(--ink);padding:0;margin:0 0 4px;
+  }
+  .legend-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-bottom:10px;}
+  .field-hint{color:var(--ink-muted);font-size:12.5px;margin:0 0 12px;}
+
+  .cascade-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .cascade-row label{flex:1;font-size:13px;color:var(--ink);}
+  .cascade-row .swatch{width:9px;height:9px;border-radius:2px;flex:none;}
+  .pct-input{
+    width:64px;flex:none;font-family:var(--font-mono);font-size:13px;text-align:right;
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-s);
+    color:var(--ink);padding:5px 6px;font-variant-numeric:tabular-nums;
+  }
+  .pct-input:focus{border-color:var(--accent);}
+  .pct-suffix{font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);width:12px;}
+
+  .sum-badge{
+    font-family:var(--font-mono);font-size:11.5px;padding:3px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--ink-muted);white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  .sum-badge[data-ok="true"]{color:var(--stored-ink);border-color:var(--stored);background:var(--stored-soft);}
+  .sum-badge[data-ok="false"]{color:var(--released-ink);border-color:var(--released);background:var(--released-soft);}
+
+  .btn{
+    font-family:var(--font-body);font-size:12.5px;font-weight:500;cursor:pointer;
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    border-radius:var(--radius-s);padding:6px 10px;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent-ink);}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;}
+
+  .choice-group{display:flex;gap:8px;margin-top:2px;}
+  .choice{
+    flex:1;text-align:left;border:1px solid var(--line-strong);background:var(--surface);
+    border-radius:var(--radius-s);padding:8px 10px;cursor:pointer;font-size:12.5px;color:var(--ink-muted);
+  }
+  .choice strong{display:block;font-size:12.5px;color:var(--ink);font-weight:600;margin-bottom:2px;}
+  .choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
+  .choice[aria-pressed="true"] strong{color:var(--accent-ink);}
+
+  .switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;}
+  .switch-row > div{min-width:0;}
+  .switch-row .label{font-size:13px;}
+  .switch-row .desc{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+  .switch{
+    position:relative;width:38px;height:22px;flex:none;border-radius:999px;border:1px solid var(--line-strong);
+    background:var(--surface-2);cursor:pointer;padding:0;
+  }
+  .switch::after{
+    content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+    background:var(--ink-faint);transition:transform .15s ease, background .15s ease;
+  }
+  .switch[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent);}
+  .switch[aria-checked="true"]::after{transform:translateX(16px);background:var(--accent);}
+
+  .subsection{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+  .subsection > .label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);margin-bottom:8px;}
+
+  .preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .preset{
+    font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-strong);background:var(--surface);
+    color:var(--ink-muted);border-radius:var(--radius-s);padding:5px 9px;cursor:pointer;
+  }
+  .preset[aria-pressed="true"]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft);}
+  .num-row{display:flex;align-items:center;gap:8px;}
+  .num-row label{font-size:12.5px;color:var(--ink-muted);flex:1;}
+  .num-input{
+    width:100px;font-family:var(--font-mono);font-size:13px;text-align:right;background:var(--paper);
+    border:1px solid var(--line);border-radius:var(--radius-s);color:var(--ink);padding:5px 6px;
+    font-variant-numeric:tabular-nums;
+  }
+  select.num-input{width:auto;flex:1;text-align:left;font-family:var(--font-body);}
+
+  [hidden]{display:none!important;}
+
+  /* ---- Results ---- */
+  .results{display:flex;flex-direction:column;gap:16px;background:transparent;border:0;}
+  .chart-card,.table-card,.reading-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:18px 20px 14px;}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+  .card-head h2{font-size:15px;font-weight:600;}
+  .card-head .note{font-size:12px;color:var(--ink-muted);}
+
+  .chart-legend{display:flex;gap:18px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--ink-muted);}
+  .chart-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .chart-legend i{width:11px;height:11px;border-radius:2px;display:inline-block;}
+
+  svg.chart{width:100%;height:auto;display:block;overflow:visible;}
+  .tick-label{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-muted);}
+  .axis-title{font-family:var(--font-body);font-size:11.5px;fill:var(--ink-muted);}
+  .gridline{stroke:var(--line);stroke-width:1;}
+  .zero-line{stroke:var(--ink-faint);stroke-width:1.25;stroke-dasharray:2 3;}
+  .step-line{fill:none;stroke:var(--ink);stroke-width:2;}
+  .milestone-dot{fill:var(--surface);stroke:var(--ink);stroke-width:1.5;}
+  .milestone-dot.hovered{stroke:var(--accent);fill:var(--accent);}
+  .crosshair{stroke:var(--ink-muted);stroke-width:1;stroke-dasharray:3 3;}
+
+  .tooltip{
+    position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);
+    font-family:var(--font-mono);font-size:11.5px;line-height:1.45;padding:8px 10px;border-radius:var(--radius-s);
+    max-width:220px;transform:translate(-50%,-100%);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18);
+    z-index:5;
+  }
+  :root[data-theme="dark"] .tooltip, @media (prefers-color-scheme:dark){ .tooltip{} }
+  .tooltip .t-year{color:var(--paper);opacity:.65;display:block;font-size:10.5px;margin-bottom:2px;}
+  .tooltip .t-val{font-weight:600;}
+  .chart-wrap{position:relative;}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th{
+    text-align:left;font-family:var(--font-body);font-weight:600;font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--ink-muted);border-bottom:1px solid var(--line-strong);padding:6px 8px;
+  }
+  td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top;}
+  td.num{font-family:var(--font-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  tr.phase-row td{background:var(--surface-2);font-weight:600;color:var(--ink-muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding-top:9px;}
+  tr.total-row td{font-weight:600;border-top:1.5px solid var(--line-strong);}
+  .table-scroll{overflow-x:auto;}
+  .term-released{color:var(--released-ink);}
+  .term-stored{color:var(--stored-ink);}
+
+  .reading-card{display:flex;gap:22px;flex-wrap:wrap;}
+  .reading{flex:1;min-width:160px;}
+  .reading .k{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);}
+  .reading .v{font-family:var(--font-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px;}
+  .reading .v.released{color:var(--released-ink);}
+  .reading .v.stored{color:var(--stored-ink);}
+  .reading .d{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+
+  footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:11.5px;}
+  footer p{margin:0 0 4px;max-width:80ch;}
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div>
+      <p class="kicker">Life-cycle assessment · engineered timber</p>
+      <h1>Timber Carbon Timeline</h1>
+      <p>Models the carbon stored in an engineered-timber product cascade and when it is released back to the atmosphere, from manufacturing through reclamation and reuse.</p>
+    </div>
+    <div class="unit-tag">x: years (0–200) · y: kg CO₂ / m³ timber (−1000…+1000)</div>
+  </header>
+
+  <main class="layout">
+    <!-- ============ INPUTS ============ -->
+    <form class="panel inputs" id="inputForm">
+
+      <fieldset>
+        <div class="legend-row">
+          <legend>1 · Virgin cascade</legend>
+          <span class="sum-badge" id="virginSumBadge">100%</span>
+        </div>
+        <p class="field-hint">Share of harvested wood entering each product stream.</p>
+
+        <div class="cascade-row"><i class="swatch" style="background:#8A5A34"></i><label for="v_gluelam">Glulam (lamellae)</label><input class="pct-input" type="number" id="v_gluelam" min="0" max="100" step="0.1" value="12"><span class="pct-suffix">%</span></div>
+        <div class="cascade-row"><i class="swatch" style="background:#B08252"></i><label for="v_lumber">Lumber</label><input class="pct-input" type="number" id="v_lumber" min="0" max="100" step="0.1" value="35"><span class="pct-suffix">%</span></div>
+        <div class="cascade-row"><i class="swatch" style="background:#C9B48A"></i><label for="v_paper">Paper</label><input class="pct-input" type="number" id="v_paper" min="0" max="100" step="0.1" value="27"><span class="pct-suffix">%</span></div>
+        <div class="cascade-row"><i class="swatch" style="background:#D8CBAE"></i><label for="v_sawdust">Sawdust</label><input class="pct-input" type="number" id="v_sawdust" min="0" max="100" step="0.1" value="18"><span class="pct-suffix">%</span></div>
+        <div class="cascade-row"><i class="swatch" style="background:#9AA79E"></i><label for="v_offcuts">Offcuts</label><input class="pct-input" type="number" id="v_offcuts" min="0" max="100" step="0.1" value="4"><span class="pct-suffix">%</span></div>
+        <div class="cascade-row"><i class="swatch" style="background:#E4E7E4"></i><label for="v_shrinkage">Shrinkage <span style="color:var(--ink-faint)">(untracked)</span></label><input class="pct-input" type="number" id="v_shrinkage" min="0" max="100" step="0.1" value="4"><span class="pct-suffix">%</span></div>
+
+        <div class="btn-row">
+          <button type="button" class="btn" data-reset="virgin">Reset to default cascade</button>
+        </div>
+
+        <div class="subsection">
+          <div class="label">Offcuts handling</div>
+          <div class="choice-group" id="v_offcutsChoice" role="group" aria-label="Virgin offcuts handling">
+            <button type="button" class="choice" data-choice="burn" aria-pressed="true"><strong>Burned</strong>shredded to sawdust — uses sawdust factors</button>
+            <button type="button" class="choice" data-choice="build" aria-pressed="false"><strong>Building material</strong>used as-is — uses lumber factors</button>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <div class="switch-row">
+          <div>
+            <div class="label">2 · Reclaim material at end of life</div>
+            <div class="desc">Adds a second life cycle: remanufacturing, reuse cascade, reclaimed release.</div>
+          </div>
+          <button type="button" class="switch" id="reclaimToggle" role="switch" aria-checked="false"></button>
+        </div>
+
+        <div id="reclaimBlock" hidden>
+          <div class="subsection">
+            <div class="legend-row"><span class="label" style="margin:0;">Reclaimed cascade</span><span class="sum-badge" id="reclaimSumBadge">100%</span></div>
+            <div class="cascade-row"><i class="swatch" style="background:#8A5A34"></i><label for="r_wood">Reclaimed wood</label><input class="pct-input" type="number" id="r_wood" min="0" max="100" step="0.1" value="70"><span class="pct-suffix">%</span></div>
+            <div class="cascade-row"><i class="swatch" style="background:#9AA79E"></i><label for="r_offcuts">Offcuts</label><input class="pct-input" type="number" id="r_offcuts" min="0" max="100" step="0.1" value="20"><span class="pct-suffix">%</span></div>
+            <div class="cascade-row"><i class="swatch" style="background:#D8CBAE"></i><label for="r_sawdust">Sawdust</label><input class="pct-input" type="number" id="r_sawdust" min="0" max="100" step="0.1" value="10"><span class="pct-suffix">%</span></div>
+            <div class="btn-row"><button type="button" class="btn" data-reset="reclaim">Reset to default cascade</button></div>
+          </div>
+
+          <div class="subsection">
+            <div class="label">Offcuts handling (reclaimed)</div>
+            <div class="choice-group" id="r_offcutsChoice" role="group" aria-label="Reclaimed offcuts handling">
+              <button type="button" class="choice" data-choice="burn" aria-pressed="true"><strong>Burned</strong>shredded to sawdust</button>
+              <button type="button" class="choice" data-choice="build" aria-pressed="false"><strong>Building material</strong>used as-is</button>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="label">Remanufacturing — transport</div>
+            <div class="preset-row" id="kmPresets">
+              <button type="button" class="preset" data-val="50">50 km</button>
+              <button type="button" class="preset" data-val="150" aria-pressed="true">150 km</button>
+              <button type="button" class="preset" data-val="500">500 km</button>
+              <button type="button" class="preset" data-val="1000">1000 km</button>
+            </div>
+            <div class="num-row"><label for="kmInput">Distance travelled</label><input class="num-input" type="number" id="kmInput" min="0" value="150"><span class="pct-suffix" style="width:auto">km</span></div>
+          </div>
+
+          <div class="subsection">
+            <div class="label">Remanufacturing — energy mix</div>
+            <div class="num-row">
+              <label for="countrySelect">Remanufacturing country</label>
+              <select class="num-input" id="countrySelect"></select>
+            </div>
+            <div class="num-row" id="customGridRow" hidden style="margin-top:6px;">
+              <label for="customGrid">Grid carbon intensity</label>
+              <input class="num-input" type="number" id="customGrid" min="0" value="300"><span class="pct-suffix" style="width:auto">gCO₂/kWh</span>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="label">Remanufacturing — energy consumption</div>
+            <div class="preset-row" id="mjPresets">
+              <button type="button" class="preset" data-val="1000">1000 MJ</button>
+              <button type="button" class="preset" data-val="1500" aria-pressed="true">1500 MJ</button>
+              <button type="button" class="preset" data-val="3000">3000 MJ</button>
+            </div>
+            <div class="num-row"><label for="mjInput">Energy consumed</label><input class="num-input" type="number" id="mjInput" min="0" value="1500"><span class="pct-suffix" style="width:auto">MJ</span></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <div class="switch-row">
+          <div>
+            <div class="label">3 · Sequestration</div>
+            <div class="desc">Forest regrowth offsetting biogenic carbon released at end of life.</div>
+          </div>
+          <button type="button" class="switch" id="seqToggle" role="switch" aria-checked="true"></button>
+        </div>
+      </fieldset>
+    </form>
+
+    <!-- ============ RESULTS ============ -->
+    <section class="results">
+
+      <div class="reading-card">
+        <div class="reading"><div class="k">Manufacturing footprint</div><div class="v" id="readManufacturing">—</div><div class="d">kg CO₂ / m³, locked in at year 1</div></div>
+        <div class="reading"><div class="k">Peak stored</div><div class="v stored" id="readPeakStored">—</div><div class="d" id="readPeakStoredWhen">—</div></div>
+        <div class="reading"><div class="k">Peak released</div><div class="v released" id="readPeakReleased">—</div><div class="d" id="readPeakReleasedWhen">—</div></div>
+        <div class="reading"><div class="k">Balance at year 200</div><div class="v" id="readFinal">—</div><div class="d">net residual footprint</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="card-head">
+          <h2>Carbon timeline</h2>
+          <span class="note">Step chart — value holds until the next event</span>
+        </div>
+        <div class="chart-legend">
+          <span><i style="background:var(--released)"></i>Released to atmosphere</span>
+          <span><i style="background:var(--stored)"></i>Stored / sequestered</span>
+          <span><i style="background:none;border-top:1.5px dashed var(--ink-faint);width:11px;height:0;"></i>Carbon-neutral baseline</span>
+        </div>
+        <div class="chart-wrap" id="chartWrap"></div>
+      </div>
+
+      <div class="table-card">
+        <div class="card-head">
+          <h2>Computed breakdown</h2>
+          <span class="note">Every term feeding the timeline above</span>
+        </div>
+        <div class="table-scroll">
+          <table id="breakdownTable"></table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Formulas.</strong> Manufacturing: gluelam/lumber = %×122/100, paper = %×500/100, sawdust/offcuts(burned) = %×30/100, offcuts(building material) = %×122/100. Release: sawdust/offcuts(burned) = %×234/100, paper = %×825/100, gluelam/lumber/offcuts(building material) = %×678/100. Sequestration = sum of that cycle's release terms. Remanufacturing = energy consumed × local grid intensity + distance × 0.015 kg CO₂/km. All terms are per m³ of timber.</p>
+    <p><strong>Grid carbon-intensity sources.</strong> Country figures: <a href="https://lowcarbonpower.org/ranking?metric=ci" target="_blank" rel="noopener">lowcarbonpower.org</a> (lifecycle gCO₂eq/kWh, 2024–25) and <a href="https://lowcarbonpower.org/region/Iceland" target="_blank" rel="noopener">lowcarbonpower.org/Iceland</a>. World average: <a href="https://www.iea.org/reports/electricity-2025/emissions" target="_blank" rel="noopener">IEA, Electricity 2025</a> (445 gCO₂/kWh, 2024). Converted to kg CO₂/MJ (÷3600) for the remanufacturing term.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Country grid data (gCO2eq/kWh) ----------
+  var COUNTRIES = [
+    ["Sweden",37.7],["Norway",30.7],["Iceland",28],["France",42.4],["Switzerland",54.7],
+    ["Finland",95.4],["Denmark",100.0],["Brazil",113.7],["Canada",131.1],["Spain",145.2],
+    ["Austria",150.3],["United Kingdom",216.4],["Belgium",227.2],["Netherlands",279.1],
+    ["Germany",298.4],["Italy",307.1],["United States",343.2],["Russia",377.1],
+    ["Mexico",406.2],["South Korea",429.5],["Japan",438.4],["Australia",439.9],
+    ["World average",445],["China",476.9],["Poland",516.1],["India",586.0],["South Africa",672.8]
+  ];
+
+  var countrySelect = document.getElementById("countrySelect");
+  COUNTRIES.forEach(function(c){
+    var opt = document.createElement("option");
+    opt.value = c[1]; opt.textContent = c[0] + "  ·  " + c[1] + " gCO₂/kWh";
+    if (c[0] === "Denmark") opt.selected = true;
+    countrySelect.appendChild(opt);
+  });
+  var customOpt = document.createElement("option");
+  customOpt.value = "custom"; customOpt.textContent = "Custom value…";
+  countrySelect.appendChild(customOpt);
+
+  // ---------- State ----------
+  var state = {
+    virgin: {gluelam:12, lumber:35, paper:27, sawdust:18, offcuts:4, shrinkage:4},
+    virginOffcuts: "burn",
+    reclaim: false,
+    reclaimed: {wood:70, offcuts:20, sawdust:10},
+    reclaimedOffcuts: "burn",
+    km: 150,
+    mjConsumed: 1500,
+    gridGPerKwh: 100.0, // Denmark default
+    seqOn: true
+  };
+
+  var VIRGIN_DEFAULT = {gluelam:12, lumber:35, paper:27, sawdust:18, offcuts:4, shrinkage:4};
+  var RECLAIM_DEFAULT = {wood:70, offcuts:20, sawdust:10};
+
+  // ---------- Wire up cascade inputs ----------
+  function num(id){ return parseFloat(document.getElementById(id).value) || 0; }
+
+  ["gluelam","lumber","paper","sawdust","offcuts","shrinkage"].forEach(function(k){
+    document.getElementById("v_"+k).addEventListener("input", function(){
+      state.virgin[k] = num("v_"+k); recalc();
+    });
+  });
+  ["wood","offcuts","sawdust"].forEach(function(k){
+    document.getElementById("r_"+k).addEventListener("input", function(){
+      state.reclaimed[k] = num("r_"+k); recalc();
+    });
+  });
+
+  document.querySelector('[data-reset="virgin"]').addEventListener("click", function(){
+    state.virgin = Object.assign({}, VIRGIN_DEFAULT);
+    Object.keys(VIRGIN_DEFAULT).forEach(function(k){ document.getElementById("v_"+k).value = VIRGIN_DEFAULT[k]; });
+    recalc();
+  });
+  document.querySelector('[data-reset="reclaim"]').addEventListener("click", function(){
+    state.reclaimed = Object.assign({}, RECLAIM_DEFAULT);
+    Object.keys(RECLAIM_DEFAULT).forEach(function(k){ document.getElementById("r_"+k).value = RECLAIM_DEFAULT[k]; });
+    recalc();
+  });
+
+  function wireChoice(groupId, stateKey){
+    var group = document.getElementById(groupId);
+    group.querySelectorAll(".choice").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        group.querySelectorAll(".choice").forEach(function(b){ b.setAttribute("aria-pressed","false"); });
+        btn.setAttribute("aria-pressed","true");
+        state[stateKey] = btn.getAttribute("data-choice");
+        recalc();
+      });
+    });
+  }
+  wireChoice("v_offcutsChoice","virginOffcuts");
+  wireChoice("r_offcutsChoice","reclaimedOffcuts");
+
+  function wireSwitch(id, onSet){
+    var el = document.getElementById(id);
+    el.addEventListener("click", function(){
+      var next = el.getAttribute("aria-checked") !== "true";
+      el.setAttribute("aria-checked", next ? "true" : "false");
+      onSet(next);
+      recalc();
+    });
+  }
+  wireSwitch("reclaimToggle", function(v){
+    state.reclaim = v;
+    document.getElementById("reclaimBlock").hidden = !v;
+  });
+  wireSwitch("seqToggle", function(v){ state.seqOn = v; });
+
+  function wirePresets(containerId, inputId, stateKey){
+    var container = document.getElementById(containerId);
+    var input = document.getElementById(inputId);
+    container.querySelectorAll(".preset").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        container.querySelectorAll(".preset").forEach(function(b){ b.setAttribute("aria-pressed","false"); });
+        btn.setAttribute("aria-pressed","true");
+        input.value = btn.getAttribute("data-val");
+        state[stateKey] = parseFloat(btn.getAttribute("data-val"));
+        recalc();
+      });
+    });
+    input.addEventListener("input", function(){
+      container.querySelectorAll(".preset").forEach(function(b){ b.setAttribute("aria-pressed","false"); });
+      state[stateKey] = parseFloat(input.value) || 0;
+      recalc();
+    });
+  }
+  wirePresets("kmPresets","kmInput","km");
+  wirePresets("mjPresets","mjInput","mjConsumed");
+
+  countrySelect.addEventListener("change", function(){
+    var customRow = document.getElementById("customGridRow");
+    if (countrySelect.value === "custom"){
+      customRow.hidden = false;
+      state.gridGPerKwh = num("customGrid");
+    } else {
+      customRow.hidden = true;
+      state.gridGPerKwh = parseFloat(countrySelect.value);
+    }
+    recalc();
+  });
+  document.getElementById("customGrid").addEventListener("input", function(){
+    state.gridGPerKwh = num("customGrid");
+    recalc();
+  });
+
+  // ---------- Calculation engine ----------
+  function compute(s){
+    var v = s.virgin, r = s.reclaimed;
+
+    var ME = {
+      gluelam: v.gluelam * 122 / 100,
+      lumber:  v.lumber  * 122 / 100,
+      paper:   v.paper   * 500 / 100,
+      sawdust: v.sawdust * 30  / 100,
+      offcuts: v.offcuts * (s.virginOffcuts === "burn" ? 30 : 122) / 100
+    };
+    var R = {
+      sawdust: v.sawdust * 234 / 100,
+      paper:   v.paper   * 825 / 100,
+      gluelam: v.gluelam * 678 / 100,
+      lumber:  v.lumber  * 678 / 100,
+      offcuts: v.offcuts * (s.virginOffcuts === "burn" ? 234 : 678) / 100
+    };
+    var sequestration = s.seqOn ? (R.sawdust + R.paper + R.gluelam + R.lumber + R.offcuts) : 0;
+
+    var out = {ME:ME, R:R, sequestration:sequestration, reclaim:s.reclaim};
+
+    if (s.reclaim){
+      var gridKgPerMJ = s.gridGPerKwh / 3600;
+      var remanu = s.mjConsumed * gridKgPerMJ + s.km * 0.015;
+      var MEn = {
+        sawdust: r.sawdust * 30 / 100,
+        offcuts: r.offcuts * (s.reclaimedOffcuts === "burn" ? 30 : 122) / 100
+      };
+      var Rn = {
+        sawdust: r.sawdust * 234 / 100,
+        offcuts: r.offcuts * (s.reclaimedOffcuts === "burn" ? 234 : 678) / 100,
+        reclaimedTimber: r.wood * 678 / 100
+      };
+      var newSequestration = s.seqOn ? (Rn.sawdust + Rn.reclaimedTimber + Rn.offcuts) : 0;
+      out.remanu = remanu; out.MEn = MEn; out.Rn = Rn; out.newSequestration = newSequestration;
+      out.gridKgPerMJ = gridKgPerMJ;
+    }
+
+    // ---- milestone points: [x, deltaLabel, delta] ----
+    var y = 0;
+    var pts = [];
+    pts.push({x:0, y:0, label:"Start", delta:0});
+
+    y += ME.gluelam+ME.lumber+ME.paper+ME.sawdust+ME.offcuts;
+    pts.push({x:1, y:y, label:"Manufacturing emissions", delta: ME.gluelam+ME.lumber+ME.paper+ME.sawdust+ME.offcuts});
+
+    var d2 = R.sawdust + (s.virginOffcuts === "burn" ? R.offcuts : 0);
+    y += d2;
+    pts.push({x:2, y:y, label:"Release of sawdust"+(s.virginOffcuts==="burn"?" + offcuts":""), delta:d2});
+
+    y += R.paper;
+    pts.push({x:7, y:y, label:"Release of paper", delta:R.paper});
+
+    y -= sequestration;
+    pts.push({x:50, y:y, label:"Sequestration", delta:-sequestration});
+
+    var d60 = R.gluelam + R.lumber + (s.virginOffcuts === "build" ? R.offcuts : 0);
+    y += d60;
+    pts.push({x:60, y:y, label:"Release of gluelam + lumber"+(s.virginOffcuts==="build"?" + offcuts":""), delta:d60});
+
+    if (s.reclaim){
+      var d61 = out.remanu + out.MEn.sawdust + out.MEn.offcuts;
+      y += d61;
+      pts.push({x:61, y:y, label:"Remanufacturing + new sawdust", delta:d61});
+
+      var d62 = out.Rn.sawdust + (s.reclaimedOffcuts === "burn" ? out.Rn.offcuts : 0);
+      y += d62;
+      pts.push({x:62, y:y, label:"Release of new sawdust"+(s.reclaimedOffcuts==="burn"?" + offcuts":""), delta:d62});
+
+      y -= out.newSequestration;
+      pts.push({x:110, y:y, label:"New sequestration", delta:-out.newSequestration});
+
+      var d120 = out.Rn.reclaimedTimber + (s.reclaimedOffcuts === "build" ? out.Rn.offcuts : 0);
+      y += d120;
+      pts.push({x:120, y:y, label:"Release of reclaimed timber"+(s.reclaimedOffcuts==="build"?" + offcuts":""), delta:d120});
+    }
+
+    pts.push({x:200, y:y, label:"End of horizon", delta:0});
+    out.points = pts;
+    return out;
+  }
+
+  // ---------- Chart ----------
+  var W = 860, H = 420, padL = 56, padR = 18, padT = 16, padB = 34;
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var xMax = 200, yMin = -1000, yMax = 1000;
+
+  function xScale(x){ return padL + (x/xMax)*plotW; }
+  function yScale(v){
+    var c = Math.max(yMin, Math.min(yMax, v));
+    return padT + (1 - (c - yMin)/(yMax-yMin)) * plotH;
+  }
+  var zeroY = yScale(0);
+
+  var chartWrap = document.getElementById("chartWrap");
+  var svgNS = "http://www.w3.org/2000/svg";
+  var svg = document.createElementNS(svgNS,"svg");
+  svg.setAttribute("class","chart");
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  chartWrap.appendChild(svg);
+
+  var tooltip = document.createElement("div");
+  tooltip.className = "tooltip"; tooltip.style.display = "none";
+  chartWrap.appendChild(tooltip);
+
+  function el(tag, attrs){
+    var e = document.createElementNS(svgNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function buildAreaPath(pts){
+    var d = "M "+xScale(pts[0].x)+" "+zeroY;
+    d += " L "+xScale(pts[0].x)+" "+yScale(pts[0].y);
+    for (var i=1;i<pts.length;i++){
+      d += " L "+xScale(pts[i].x)+" "+yScale(pts[i-1].y);
+      d += " L "+xScale(pts[i].x)+" "+yScale(pts[i].y);
+    }
+    d += " L "+xScale(pts[pts.length-1].x)+" "+zeroY+" Z";
+    return d;
+  }
+  function buildLinePath(pts){
+    var d = "M "+xScale(pts[0].x)+" "+yScale(pts[0].y);
+    for (var i=1;i<pts.length;i++){
+      d += " L "+xScale(pts[i].x)+" "+yScale(pts[i-1].y);
+      d += " L "+xScale(pts[i].x)+" "+yScale(pts[i].y);
+    }
+    return d;
+  }
+
+  var gridLayer, fillLayer, lineLayer, dotLayer, hoverLayer, uid = "tl"+Math.floor(Math.random()*1e6);
+
+  function render(data){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    // defs: clip paths for upper (released) / lower (stored) halves
+    var defs = el("defs",{});
+    var clipUpper = el("clipPath",{id:uid+"-upper"});
+    clipUpper.appendChild(el("rect",{x:padL,y:padT,width:plotW,height:zeroY-padT}));
+    var clipLower = el("clipPath",{id:uid+"-lower"});
+    clipLower.appendChild(el("rect",{x:padL,y:zeroY,width:plotW,height:(padT+plotH)-zeroY}));
+    defs.appendChild(clipUpper); defs.appendChild(clipLower);
+    svg.appendChild(defs);
+
+    gridLayer = el("g",{}); svg.appendChild(gridLayer);
+    fillLayer = el("g",{}); svg.appendChild(fillLayer);
+    lineLayer = el("g",{}); svg.appendChild(lineLayer);
+    dotLayer = el("g",{}); svg.appendChild(dotLayer);
+    hoverLayer = el("g",{}); svg.appendChild(hoverLayer);
+
+    // gridlines + y ticks
+    for (var yv=-1000; yv<=1000; yv+=250){
+      var yy = yScale(yv);
+      gridLayer.appendChild(el("line",{x1:padL,x2:padL+plotW,y1:yy,y2:yy,class: yv===0 ? "zero-line":"gridline"}));
+      var t = el("text",{x:padL-8,y:yy+3,class:"tick-label","text-anchor":"end"});
+      t.textContent = (yv>0?"+":"")+yv;
+      gridLayer.appendChild(t);
+    }
+    // x ticks
+    [0,25,50,75,100,125,150,175,200].forEach(function(xv){
+      var xx = xScale(xv);
+      gridLayer.appendChild(el("line",{x1:xx,x2:xx,y1:padT,y2:padT+plotH,class:"gridline",opacity:0.5}));
+      var t = el("text",{x:xx,y:padT+plotH+16,class:"tick-label","text-anchor":"middle"});
+      t.textContent = xv; gridLayer.appendChild(t);
+    });
+    var pts = data.points;
+    var areaPath = buildAreaPath(pts);
+    var upperFill = el("path",{d:areaPath, fill:"var(--released)", opacity:"0.22", "clip-path":"url(#"+uid+"-upper)"});
+    var lowerFill = el("path",{d:areaPath, fill:"var(--stored)", opacity:"0.22", "clip-path":"url(#"+uid+"-lower)"});
+    fillLayer.appendChild(upperFill); fillLayer.appendChild(lowerFill);
+
+    lineLayer.appendChild(el("path",{d:buildLinePath(pts), class:"step-line"}));
+
+    pts.forEach(function(p, i){
+      if (p.x===0 || p.x===200) return;
+      dotLayer.appendChild(el("circle",{cx:xScale(p.x), cy:yScale(p.y), r:3.5, class:"milestone-dot", "data-idx":i}));
+    });
+
+    // hover capture
+    var crosshair = el("line",{class:"crosshair", x1:0,x2:0,y1:padT,y2:padT+plotH, style:"display:none"});
+    hoverLayer.appendChild(crosshair);
+    var capture = el("rect",{x:padL,y:padT,width:plotW,height:plotH,fill:"transparent"});
+    hoverLayer.appendChild(capture);
+
+    function valueAt(year){
+      var v = 0, label = "Start";
+      for (var i=0;i<pts.length;i++){
+        if (pts[i].x <= year){ v = pts[i].y; label = pts[i].label; }
+      }
+      return {v:v, label:label};
+    }
+
+    capture.addEventListener("mousemove", function(evt){
+      var rect = svg.getBoundingClientRect();
+      var scaleX = W/rect.width;
+      var mx = (evt.clientX-rect.left)*scaleX;
+      var year = Math.round(((mx-padL)/plotW)*xMax);
+      year = Math.max(0, Math.min(200, year));
+      var res = valueAt(year);
+      var px = xScale(year);
+      crosshair.setAttribute("x1",px); crosshair.setAttribute("x2",px);
+      crosshair.style.display = "block";
+
+      var wrapRect = chartWrap.getBoundingClientRect();
+      var scaleDisp = rect.width/W;
+      tooltip.style.display = "block";
+      tooltip.style.left = (rect.left - wrapRect.left + px*scaleDisp) + "px";
+      tooltip.style.top = (rect.top - wrapRect.top + yScale(res.v)*scaleDisp - 10) + "px";
+      tooltip.innerHTML = '<span class="t-year">Year '+year+' — '+res.label+'</span><span class="t-val">'+fmt(res.v)+' kg CO₂/m³</span>';
+    });
+    capture.addEventListener("mouseleave", function(){
+      crosshair.style.display = "none";
+      tooltip.style.display = "none";
+    });
+  }
+
+  function fmt(n){
+    var r = Math.round(n*10)/10;
+    return (r>0?"+":"")+r.toLocaleString(undefined,{maximumFractionDigits:1,minimumFractionDigits:1});
+  }
+
+  // ---------- Breakdown table ----------
+  var table = document.getElementById("breakdownTable");
+  function row(cells, cls){
+    var tr = document.createElement("tr"); if (cls) tr.className = cls;
+    cells.forEach(function(c, i){
+      var cell = document.createElement(cls==="head"?"th":"td");
+      if (typeof c === "object"){ cell.innerHTML = c.html; if(c.cls) cell.className = c.cls; }
+      else cell.textContent = c;
+      if (i>0 && cls!=="head" && typeof c !== "object") cell.className = "num";
+      tr.appendChild(cell);
+    });
+    return tr;
+  }
+  function phaseRow(label){
+    var tr = document.createElement("tr"); tr.className = "phase-row";
+    var td = document.createElement("td"); td.colSpan = 3; td.textContent = label;
+    tr.appendChild(td); return tr;
+  }
+
+  function renderTable(data, s){
+    table.innerHTML = "";
+    table.appendChild(row(["Term","Formula","kg CO₂/m³"], "head"));
+
+    table.appendChild(phaseRow("Manufacturing — year 1"));
+    table.appendChild(row(["Glulam", s.virgin.gluelam+"% × 122 / 100", fmt(data.ME.gluelam)]));
+    table.appendChild(row(["Lumber", s.virgin.lumber+"% × 122 / 100", fmt(data.ME.lumber)]));
+    table.appendChild(row(["Paper", s.virgin.paper+"% × 500 / 100", fmt(data.ME.paper)]));
+    table.appendChild(row(["Sawdust", s.virgin.sawdust+"% × 30 / 100", fmt(data.ME.sawdust)]));
+    table.appendChild(row(["Offcuts ("+(s.virginOffcuts==="burn"?"burned":"building material")+")", s.virgin.offcuts+"% × "+(s.virginOffcuts==="burn"?30:122)+" / 100", fmt(data.ME.offcuts)]));
+
+    table.appendChild(phaseRow("First-life release — years 2, 7, 60"));
+    table.appendChild(row([{html:"Release of sawdust"}, s.virgin.sawdust+"% × 234 / 100", {html:'<span class="term-released">'+fmt(data.R.sawdust)+"</span>", cls:"num"}]));
+    table.appendChild(row([{html:"Release of paper"}, s.virgin.paper+"% × 825 / 100", {html:'<span class="term-released">'+fmt(data.R.paper)+"</span>", cls:"num"}]));
+    table.appendChild(row([{html:"Release of gluelam"}, s.virgin.gluelam+"% × 678 / 100", {html:'<span class="term-released">'+fmt(data.R.gluelam)+"</span>", cls:"num"}]));
+    table.appendChild(row([{html:"Release of lumber"}, s.virgin.lumber+"% × 678 / 100", {html:'<span class="term-released">'+fmt(data.R.lumber)+"</span>", cls:"num"}]));
+    table.appendChild(row([{html:"Release of offcuts ("+(s.virginOffcuts==="burn"?"burned":"building material")+")"}, s.virgin.offcuts+"% × "+(s.virginOffcuts==="burn"?234:678)+" / 100", {html:'<span class="term-released">'+fmt(data.R.offcuts)+"</span>", cls:"num"}]));
+    table.appendChild(row([{html:"Sequestration"+(s.seqOn?"":" (off)")}, "sum of the releases above", {html:'<span class="term-stored">'+fmt(-data.sequestration)+"</span>", cls:"num"}]));
+
+    if (data.reclaim){
+      table.appendChild(phaseRow("Remanufacturing — year 61"));
+      table.appendChild(row(["Remanufacturing energy", s.mjConsumed+" MJ × "+data.gridKgPerMJ.toFixed(5)+" kgCO₂/MJ + "+s.km+"km × 0.015", fmt(data.remanu)]));
+      table.appendChild(row(["New sawdust (manufacturing)", s.reclaimed.sawdust+"% × 30 / 100", fmt(data.MEn.sawdust)]));
+      table.appendChild(row(["New offcuts ("+(s.reclaimedOffcuts==="burn"?"burned":"building material")+", manufacturing)", s.reclaimed.offcuts+"% × "+(s.reclaimedOffcuts==="burn"?30:122)+" / 100", fmt(data.MEn.offcuts)]));
+
+      table.appendChild(phaseRow("Second-life release — years 62, 120"));
+      table.appendChild(row([{html:"Release of new sawdust"}, s.reclaimed.sawdust+"% × 234 / 100", {html:'<span class="term-released">'+fmt(data.Rn.sawdust)+"</span>", cls:"num"}]));
+      table.appendChild(row([{html:"Release of new offcuts ("+(s.reclaimedOffcuts==="burn"?"burned":"building material")+")"}, s.reclaimed.offcuts+"% × "+(s.reclaimedOffcuts==="burn"?234:678)+" / 100", {html:'<span class="term-released">'+fmt(data.Rn.offcuts)+"</span>", cls:"num"}]));
+      table.appendChild(row([{html:"Release of reclaimed timber"}, s.reclaimed.wood+"% × 678 / 100", {html:'<span class="term-released">'+fmt(data.Rn.reclaimedTimber)+"</span>", cls:"num"}]));
+      table.appendChild(row([{html:"New sequestration"+(s.seqOn?"":" (off)")}, "sum of the releases above", {html:'<span class="term-stored">'+fmt(-data.newSequestration)+"</span>", cls:"num"}]));
+    }
+  }
+
+  // ---------- Readouts ----------
+  function renderReadouts(data){
+    var pts = data.points;
+    document.getElementById("readManufacturing").textContent = fmt(pts[1].y);
+    var peakStored = 0, peakStoredWhen = 0, peakReleased = 0, peakReleasedWhen = 0;
+    pts.forEach(function(p){
+      if (p.y < peakStored){ peakStored = p.y; peakStoredWhen = p.x; }
+      if (p.y > peakReleased){ peakReleased = p.y; peakReleasedWhen = p.x; }
+    });
+    document.getElementById("readPeakStored").textContent = peakStored<0 ? fmt(peakStored) : "—";
+    document.getElementById("readPeakStoredWhen").textContent = peakStored<0 ? "reached at year "+peakStoredWhen : "never goes net-negative";
+    document.getElementById("readPeakReleased").textContent = fmt(peakReleased);
+    document.getElementById("readPeakReleasedWhen").textContent = "reached at year "+peakReleasedWhen;
+    var final = pts[pts.length-1].y;
+    var finalEl = document.getElementById("readFinal");
+    finalEl.textContent = fmt(final);
+    finalEl.className = "v " + (final>0 ? "released" : final<0 ? "stored" : "");
+  }
+
+  // ---------- Sum badges ----------
+  function updateSumBadge(id, total){
+    var badge = document.getElementById(id);
+    var rounded = Math.round(total*10)/10;
+    badge.textContent = rounded+"%";
+    badge.setAttribute("data-ok", Math.abs(total-100) < 0.05 ? "true" : "false");
+  }
+
+  // ---------- Main recalc ----------
+  function recalc(){
+    var vTotal = state.virgin.gluelam+state.virgin.lumber+state.virgin.paper+state.virgin.sawdust+state.virgin.offcuts+state.virgin.shrinkage;
+    updateSumBadge("virginSumBadge", vTotal);
+    var rTotal = state.reclaimed.wood+state.reclaimed.offcuts+state.reclaimed.sawdust;
+    updateSumBadge("reclaimSumBadge", rTotal);
+
+    var data = compute(state);
+    render(data);
+    renderTable(data, state);
+    renderReadouts(data);
+  }
+
+  window.TimberReference = {snapshot: function(){return {inputs:JSON.parse(JSON.stringify(state)),result:compute(state)};}};
+  recalc();
+})();
+</script>
+<link rel="stylesheet" href="reference.css">
+<script src="reference.js"></script>
+<script src="excel-export.js?v=20261006-1"></script>
+</body></html>

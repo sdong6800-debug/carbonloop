@@ -1,0 +1,47 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium}=require('playwright'),C=require('./model-core.js');
+const A=C.sample(),a=C.calculate(A);assert.equal(a.total,5);assert.equal(a.known,5);
+assert.ok(Math.abs(a.value-6.72*2300*.1013)<1e-8);
+const B=C.clone(A);B[0].h=.18;const expectedB=6.24*2300*.1013;
+assert.ok(Math.abs(C.calculate(B).value-expectedB)<1e-8);assert.equal(A[0].h,.2);
+assert.ok(C.compare(A,B).delta<0);B[0].material='unknown';assert.equal(C.compare(A,B).delta,null);
+assert.equal(C.calculate(B).known,4);assert.equal(C.element({...A[0],h:0}).value,null);
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+ const p=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto('http://127.0.0.1:8513/material-estimate.html');await p.waitForURL('**/demo.html');
+ assert.equal(await p.locator('#app').isVisible(),false);await require('./test-entry-helper.cjs')(p);
+ assert.equal(await p.locator('#model g[data-id]').count(),5);
+ assert.equal(await p.locator('#total').textContent(),a.value.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+ assert.equal(await p.locator('#dimension').isDisabled(),true);
+ await p.locator('#elements [data-id="C01"]').click();assert.equal(await p.locator('#elementName').textContent(),'柱 1');
+ await p.locator('#elements [data-id="S01"]').click();await p.click('#reportExplore');await p.click('#copy');
+ assert.equal(await p.locator('#dimension').isDisabled(),false);
+ await p.locator('#dimension').fill('180');await p.locator('#dimension').dispatchEvent('input');
+ assert.equal(await p.locator('#total').textContent(),expectedB.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+ assert.ok((await p.locator('#changes').textContent()).includes('200 → 180'));
+ assert.ok((await p.locator('#delta').textContent()).includes('-111.84'));
+ await p.click('#tabA');assert.equal(await p.locator('#dimension').inputValue(),'200');
+ await p.click('[data-step="3"]');await p.selectOption('#material','unknown');assert.ok((await p.locator('#delta').textContent()).includes('暂停差值'));
+ assert.ok((await p.locator('#coverage').textContent()).includes('4 / 5'));
+ await p.selectOption('#material','concrete');
+ assert.ok((await p.locator('#liveDelta').textContent()).includes('-111.84'));
+ assert.equal(await p.locator('#contributions button').count(),5);
+ await p.locator('#contributions [data-id="C02"]').click();assert.equal(await p.locator('#elementName').textContent(),'柱 2');
+ assert.equal(await p.locator('#model [data-id="C02"]').getAttribute('aria-pressed'),'true');
+ assert.ok((await p.locator('#selectedResultName').textContent()).includes('柱 2'));
+ await p.locator('#elements [data-id="S01"]').click();
+ await p.locator('.project-details summary').click();assert.ok((await p.locator('.project-data').textContent()).includes('非整栋建筑面积'));await p.locator('.project-details summary').click();
+ await p.locator('header [data-open="evidence"]').click();assert.equal(await p.locator('#evidence').isVisible(),true);
+ assert.ok((await p.locator('#evidence').textContent()).includes('0.0887'));await p.keyboard.press('Escape');assert.equal(await p.locator('#evidence').isVisible(),false);
+ await p.locator('[data-open="structure"]').click();assert.ok((await p.locator('#structure').textContent()).includes('未执行'));await p.locator('#structure .close-dialog').click();
+ await p.setViewportSize({width:1280,height:900});
+ await p.evaluate(()=>scrollTo(0,0));for(const id of ['dimension','total','liveDelta']){const box=await p.locator('#'+id).boundingBox();assert.ok(box.y+box.height<900,`${id} must stay above the desktop fold`);}
+ for(const width of [1280,1024,768,390]){await p.setViewportSize({width,height:900});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'overflow at '+width);}
+ await p.setViewportSize({width:1440,height:1000});
+ const [download]=await Promise.all([p.waitForEvent('download'),p.click('#export')]);
+ const exported=JSON.parse(fs.readFileSync(await download.path(),'utf8'));assert.equal(exported.A.elements[0].h,.2);assert.equal(exported.B.elements[0].h,.18);assert.equal(exported.A.result.lines[0].factor.density,2300);assert.equal(exported.factors.length,11);assert.ok(exported.origin.includes('未连接'));
+ await p.screenshot({path:path.join(__dirname,'model-demo-desktop.png'),fullPage:true});
+ await p.setViewportSize({width:390,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await p.screenshot({path:path.join(__dirname,'model-demo-mobile.png'),fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS model arithmetic, A/B isolation, missing-material gates, export, linked bars/model/inspector, project scope, accessible dialogs, desktop visible controls/results, 4 responsive widths');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

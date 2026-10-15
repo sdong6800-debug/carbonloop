@@ -1,0 +1,14 @@
+name: carbonloop-rhino
+version: 0.2.0
+authors:
+  - Dong Shuyin
+description: >-
+  CarbonLoop for Rhino 8: select building elements, send model semantics and
+  material quantities to a local early-design embodied-carbon workbench, and
+  review AI-assisted improvement options.
+keywords:
+  - carbon
+  - embodied-carbon
+  - architecture
+  - rhino8
+  - early-design

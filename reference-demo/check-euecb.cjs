@@ -1,0 +1,72 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {chromium}=require('playwright');
+const C=require('./euecb-core.js');
+const d=JSON.parse(fs.readFileSync(path.join(__dirname,'data/euecb.json'),'utf8'));
+const rows=d.records,clone=o=>JSON.parse(JSON.stringify(o));
+assert.equal(rows.length,854);assert.equal(new Set(rows.map(r=>r.admin_project_code)).size,850);
+assert.equal(rows.filter(r=>r.duplicate_code).length,7);
+assert.ok(!JSON.stringify(d).includes('admin_project_contact'));
+assert.equal(C.numeric(''),null);assert.equal(C.numeric(null),null);assert.equal(C.numeric('0'),0);
+const r=rows.find(r=>r.admin_project_code==='BUILD03');
+assert.equal(C.result(r,'production').value,8.35);
+assert.ok(Math.abs(C.result(r).value-9.15)<1e-9);
+assert.ok(Math.abs(C.result(r,'reference','period').value-457.5)<1e-8);
+assert.equal(C.result(r,'upfront').value,null);
+const missing=clone(r);delete missing.reported.GHG_C4_m2a;assert.equal(C.result(missing).value,null);
+const zero=clone(r);zero.reported.GHG_A123_m2a=0;assert.equal(C.result(zero,'production').value,0);
+const negative=clone(r);negative.reported.GHG_A123_m2a=-1;assert.equal(C.result(negative,'production').value,-1);
+const groups=C.cohorts(rows,'reference');assert.equal(groups[0].rows.length,18);
+assert.equal(groups[0].rows[0].site_country,'Denmark');
+for(const metric of Object.keys(C.METRICS))for(const g of C.cohorts(rows,metric)){
+ assert.ok(g.rows.every(r=>C.result(r,metric).value!==null&&!r.duplicate_code));
+ assert.equal(new Set(g.rows.map(r=>C.key(r,metric))).size,1);
+}
+(async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});
+ try{
+ const page=await browser.newPage({viewport:{width:1512,height:1040}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8513/dashboard.html');await page.locator('#app').waitFor({state:'visible'});
+ assert.equal(await page.locator('#count').textContent(),'854');assert.equal(await page.locator('#cohortCount').textContent(),'18');
+ const avg=C.stats(groups[0].rows.map(r=>C.result(r).value)).mean;
+ assert.equal(await page.locator('#average').textContent(),avg.toLocaleString('zh-CN',{maximumFractionDigits:2}));
+ await page.screenshot({path:path.join(__dirname,'dashboard-real-desktop.png'),fullPage:true});
+ await page.selectOption('#unit','period');assert.equal(await page.locator('#average').textContent(),(avg*50).toLocaleString('zh-CN',{maximumFractionDigits:2}));
+ assert.ok((await page.locator('#valueHeader').textContent()).includes('原研究期'));
+ await page.selectOption('#unit','annual');
+ await page.click('#pickPair');assert.equal(await page.locator('#onlyCohort').isChecked(),true);
+ assert.ok((await page.locator('#comparisonContent').textContent()).includes('数值差为'));
+ assert.equal(await page.locator('#caseRows tr').count(),18);
+ await page.screenshot({path:path.join(__dirname,'dashboard-real-comparison.png'),fullPage:true});
+ await page.selectOption('#scope','upfront');
+ assert.ok(!(await page.locator('#comparisonContent').textContent()).includes('数值差为'));
+ assert.ok((await page.locator('#comparisonContent').textContent()).includes('不计算差值'));
+ await page.click('#resetFilters');await page.selectOption('#scope','reference');
+ await page.selectOption('#country','France');assert.equal(await page.locator('#count').textContent(),'486');
+ assert.equal(await page.locator('#average').textContent(),'—');assert.equal(await page.locator('#pickPair').isDisabled(),true);
+ await page.locator('#search').fill('not-found');assert.equal(await page.locator('#count').textContent(),'0');
+ assert.equal(await page.locator('#exportBtn').isDisabled(),true);assert.equal(await page.locator('#caseDetail').isVisible(),false);
+ await page.click('#resetFilters');await page.click('#nextPage');assert.ok((await page.locator('#pageInfo').textContent()).includes('41–80'));
+ await page.click('#prevPage');await page.locator('#search').fill('BUILD03');await page.locator('[data-detail]').first().click();
+ assert.ok((await page.locator('#caseDetail').textContent()).includes('9.15'));
+ assert.ok((await page.locator('#caseDetail').textContent()).includes('第 4 行'));
+ await page.click('#resetFilters');
+ await page.locator('[data-compare="EU-0001"]').check();
+ await page.locator('[data-compare="EU-0003"]').check();
+ assert.ok((await page.locator('#comparisonContent').textContent()).includes('不计算差值'));
+ const pending=page.waitForEvent('download');await page.click('#exportBtn');const dl=await pending;
+ let exported='';for await(const c of await dl.createReadStream())exported+=c;
+ const out=JSON.parse(exported);assert.equal(out.records.length,854);assert.equal(out.source.commit,d.meta.commit);assert.equal(out.cohort.row_ids.length,18);
+ assert.equal(out.records.find(r=>r.project_code==='BUILD03').value,9.15);
+ await page.click('#resetFilters');
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:path.join(__dirname,'dashboard-real-mobile.png'),fullPage:true});
+ assert.deepEqual(errors,[]);
+ // Loading failure must never fall back to the synthetic demo.
+ const fail=await browser.newPage();await fail.route('**/data/euecb.json',route=>route.fulfill({status:404,body:'not found'}));
+ await fail.goto('http://127.0.0.1:8513/dashboard.html');await fail.locator('.notice.error').waitFor();assert.equal(await fail.locator('#app').isVisible(),false);
+ console.log(JSON.stringify({passed:true,records:rows.length,largest_cohort:18,default_average:avg,checks:'source arithmetic, null/zero/negative, complete stages, duplicate exclusion, filters, pagination, unit conversion, compatible/incompatible comparison, export provenance, responsive layout, loading failure, no page errors'}));
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});

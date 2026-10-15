@@ -1,0 +1,41 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+ const p=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto('http://127.0.0.1:8513/demo.html');
+ const previewBefore=await p.locator('.entry-preview').boundingBox();
+ await p.click('#entryRead');assert.equal(await p.locator('.entry-row').count(),6);
+ const previewAfter=await p.locator('.entry-preview').boundingBox();assert.ok(Math.abs(previewBefore.x-previewAfter.x)<1);assert.ok(Math.abs(previewBefore.width-previewAfter.width)<1);
+ assert.equal(await p.locator('#entryBack').isVisible(),false);assert.equal(await p.locator('#entryRangePanel').evaluate(e=>e.open),false);
+ assert.equal(await p.locator('#entryMaterial').isVisible(),true);assert.equal(await p.locator('#entryType').isVisible(),true);
+ await p.selectOption('[data-row-material=S01]','timber-clt');
+ assert.equal(await p.inputValue('#entryMaterial'),'timber-clt');assert.equal(await p.locator('#entryModel [data-entry-id=S01]').getAttribute('aria-pressed'),'true');
+ assert.match(await p.textContent('#entrySelectedLabel'),/S01/);assert.match(await p.textContent('#entrySourceMaterial'),/C30\/37/);
+ await p.click('[data-confirm-row=S01]');assert.match(await p.textContent('#entrySummary'),/已确认 1/);
+ await p.selectOption('[data-row-material=S01]','concrete-precast');assert.match(await p.textContent('#entrySummary'),/已确认 0/);
+ await p.click('[data-confirm-row=S01]');
+ await p.locator('#entryModel [data-entry-id=C02]').press('Enter');
+ assert.equal(await p.inputValue('#entryMaterial'),'steel-section');assert.equal(await p.locator('[data-row=C02]').getAttribute('data-selected'),'true');
+ assert.equal(await p.locator('#entryModel g[data-entry-id]').last().getAttribute('data-entry-id'),'C02');
+ await p.selectOption('#entryType','beam');assert.match(await p.textContent('[data-row=C02]'),/梁 C02/);await p.selectOption('#entryMaterial','steel-tube');await p.click('#entryConfirmOne');
+ await p.click('#entryRangeSummary');await p.check('[name=entryScope][value=all]');assert.equal(await p.locator('.entry-row').count(),11);
+ assert.equal(await p.inputValue('[data-row-material=S01]'),'concrete-precast');assert.match(await p.textContent('#entrySummary'),/已确认 2/);
+ await p.check('[name=entryScope][value=floor]');await p.selectOption('#entryFloorSelect','2F');assert.equal(await p.locator('.entry-row').count(),5);
+ await p.selectOption('#entryFloorSelect','1F');assert.equal(await p.inputValue('[data-row-material=C02]'),'steel-tube');assert.match(await p.textContent('#entrySummary'),/已确认 2/);
+ // An empty selection cannot continue, then one click can add a model object.
+ await p.check('[name=entryScope][value=selection]');assert.equal(await p.locator('.entry-row').count(),0);assert.ok(await p.isDisabled('#entryContinue'));
+ await p.locator('#entryModel [data-entry-id=C02]').press('Enter');assert.equal(await p.locator('.entry-row').count(),1);
+ await p.click('#entryRangeSummary');await p.locator('#entryModel [data-entry-id=C02]').press('Enter');assert.equal(await p.locator('.entry-row').count(),1);
+ await p.click('#entryRangeSummary');await p.check('[name=entryScope][value=floor]');await p.click('#entryRangeSummary');
+ await p.locator('#entryModel [data-entry-id=C03]').press('Enter');await p.screenshot({path:'unified-review-desktop.png',fullPage:true});
+ for(const width of [1280,1024,768,390]){await p.setViewportSize({width,height:950});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+width);}
+ await p.locator('[data-row-material=W01]').scrollIntoViewIfNeeded();await p.selectOption('[data-row-material=W01]','masonry-aac');
+ const model=await p.locator('#entryModel').boundingBox();assert.ok(model.y>=0&&model.y+model.height<=950,'model remains visible at mobile edit');await p.screenshot({path:'unified-review-mobile.png'});
+ await p.setViewportSize({width:1440,height:1000});await p.click('#entryConfirmGroup');await p.check('#entryPartial');await p.click('#entryContinue');
+ const [d]=await Promise.all([p.waitForEvent('download'),p.click('#export')]);const data=JSON.parse(fs.readFileSync(await d.path(),'utf8'));
+ assert.equal(data.A.elements.find(e=>e.id==='S01').material,'concrete-precast');assert.equal(data.A.elements.find(e=>e.id==='C02').type,'beam');assert.equal(data.model_entry.confirmed_count,6);assert.equal(data.model_entry.source_count,11);
+ assert.equal(data.model_entry.rhino_connected,false);assert.ok(data.A.result.value>0);assert.equal(data.A.result.known,5);assert.equal(data.A.result.complete,false);
+ await p.click('#recheckModel');assert.equal(await p.inputValue('[data-row-material=S01]'),'concrete-precast');
+ await p.click('#entryContinue');await p.click(await p.locator('#carbonReport').isVisible()?'#reportExplore':'#flowNext');await p.click('#copy');await p.click('#recheckModel');
+ assert.ok(await p.isDisabled('[data-row-material=S01]'));await p.click('#entryRangeSummary');assert.ok(await p.isDisabled('#entryFloorSelect'));assert.ok(await p.isDisabled('#entryMaterial'));
+ assert.deepEqual(errors,[]);console.log('PASS persistent model, inline corrections, linked highlights, retained scope confirmations, empty selection, responsive pinned model, export and readonly guard');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
