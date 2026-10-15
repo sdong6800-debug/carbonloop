@@ -51,8 +51,8 @@
   $('changeRecipe').disabled=state.active!=='B'||!['concrete','concrete-cast'].includes(e.material);$('changeRecipe').value=e.factorId||'';
   reviewFold.hidden=state.step!==4;
   parameterNotes.open=!c.kind;
-  const baseResult=C.calculate(state.baseline);$('reportState').textContent=baseResult.complete?'材料生产＋处置 · 所选 '+state.baseline.length+' 个构件':'数据待补：仅显示已知部分小计';
-  results.querySelector('.total-result>span').textContent=baseResult.complete?'所选范围碳排放':'已知部分碳排放';
+  const baseResult=C.calculate(state.baseline);$('reportState').textContent=baseResult.complete?'材料生产＋处置 · 所选 '+state.baseline.length+' 个构件':`当前仅计算 ${baseResult.known} / ${baseResult.total} 个构件，不是整个模型总排放。`;
+  results.querySelector('.total-result>span').textContent=baseResult.complete?'所选范围小计':'已确认构件小计';
   results.querySelector('.total-result small').textContent='kg CO₂e · 生产＋处置';
   impact.hidden=state.step!==3&&state.step!==4;if(state.step===4)$('comparison').prepend(impact);else results.prepend(impact);
   $('resultModelDetails').hidden=true;

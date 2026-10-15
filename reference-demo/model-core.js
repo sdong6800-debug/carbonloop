@@ -52,20 +52,37 @@
   const factor=allowedOverride?factors.find(f=>f.id===override):factorFor(e.material),fail=error=>({error,volume:null,value:null,factor});
   if(override&&!allowedOverride)return fail('候选因子与材料类别不匹配，需重新核对');
   if(!factor)return fail(e.material==='unknown'||!materials.some(m=>m.id===e.material)?'材料未确认':materialInfo(e.material).name+'：计算数据待接入');
+  const finishSurface=e.material==='stone-natural-polished'&&(e.type==='finish'||/(^|[:._\-\s])(?:ext\.?\s*)?finish(?:es)?($|[:._\-\s])/i.test(e.layer||''));
   const q=e.quantity;
-  if(!q&&e.quantityRequired)return fail(e.previewAdjusted?'已识别平面/线性对象；缺真实厚度或材料净量，预览厚度不参与碳计算':'Rhino 对象缺材料净体积，不能用包围盒体积代替实际工程量');
+  if(!q&&e.quantityRequired&&!finishSurface)return fail(e.previewAdjusted?'已识别平面/线性对象；缺真实厚度或材料净量，预览厚度不参与碳计算':'Rhino 对象缺材料净体积，不能用包围盒体积代替实际工程量');
   if(q){
    if(q.material&&q.material!==e.material)return fail('数量依据与材料类别不一致，需重新读取实际材料净量');
    if(Array.isArray(q.dimensions)&&JSON.stringify(q.dimensions)!==JSON.stringify([e.l,e.w,e.h]))return fail('几何已改变，原材料净量失效，需重新读取');
-   if(q.kind==='i-section'){
+   if(q.kind==='net-volume'&&finishSurface&&Number.isFinite(q.value)&&q.value>0){volume=q.value;quantityBasis=q.basis||'Rhino 壳体净体积（仅作核对，不用于 15 mm 饰面代理）';}
+   else if(q.kind==='i-section'){
     const {b,d,tf,tw}=q;
     if(![b,d,tf,tw].every(v=>Number.isFinite(v)&&v>0)||2*tf>=d||tw>=b||b>e.l||d>e.w)return fail('型钢截面尺寸无效');
     volume=(2*b*tf+(d-2*tf)*tw)*e.h;quantityBasis=`演示 I 形截面假设：翼缘 ${b}×${tf} m，两片；腹板高 ${d-2*tf} m、厚 ${tw} m；净截面积 × 柱高。不代表标准型钢型号。`;
    }else if(q.kind==='net-volume'&&Number.isFinite(q.value)&&q.value>0&&q.value<=volume*(1+1e-9)){volume=Math.min(q.value,volume);quantityBasis=q.basis||'声明的材料净体积 m³';}
    else return fail('材料净量格式无效');
   }else if(['steel-section','steel-tube','rebar','rebar-mesh'].includes(e.material))return fail('已有碳因子；缺实际截面或材料净体积，不能用外包尺寸代替');
-  const mass=volume*factor.density,production=mass*factor.production,disposal=mass*factor.disposal;
-  return {error:null,volume,mass,production,disposal,value:production+disposal,factor,quantityBasis,referenceNote:override?'瑞士特定混凝土配方数据的假设替换；强度、耐久、供应与施工适用性未验证，非等效产品推荐':factorNote(e.material),storedCarbonKgC:mass*factor.storedCarbon};
+  // The KBOB natural-stone record is natively a 15 mm plate per m². Imported
+  // architectural finish meshes often contain a modelling shell (the current
+  // Farnsworth sample is about 1 mm thick), which must not silently replace
+  // the product thickness represented by the source record. For an explicitly
+  // named finish layer, keep the Rhino volume as an audit value and calculate
+  // the early-design proxy directly from surface area × the source's m² data.
+  let area=null,modelVolume=null,quantityWarning='';
+  if(finishSurface&&factor.sourceMassPerArea&&factor.sourceThickness){
+   const dims=(Array.isArray(e.sourceDimensions)&&e.sourceDimensions.length===3?e.sourceDimensions:[e.l,e.w,e.h]).filter(v=>Number.isFinite(v)&&v>0).sort((a,b)=>b-a);
+   if(dims.length<2)return fail('饰面构件缺有效表面积，暂不能按平方米计算');
+   area=dims[0]*dims[1];modelVolume=q?.kind==='net-volume'&&Number.isFinite(q.value)?q.value:null;
+   volume=area*factor.sourceThickness;
+   quantityBasis=`饰面面积 ${area.toLocaleString('zh-CN',{maximumFractionDigits:4})} m² × KBOB 参考厚度 ${factor.sourceThickness*1000} mm`;
+   if(modelVolume&&Math.abs(modelVolume-volume)/volume>.25)quantityWarning=`Rhino 净体积 ${modelVolume.toLocaleString('zh-CN',{maximumFractionDigits:6})} m³ 与 15 mm 来源口径不一致；本次未用该建模壳体积，需核对实际石材厚度。`;
+  }
+  const mass=area===null?volume*factor.density:area*factor.sourceMassPerArea,production=mass*factor.production,disposal=mass*factor.disposal;
+  return {error:null,volume,area,modelVolume,quantityWarning,mass,production,disposal,value:production+disposal,factor,quantityBasis,referenceNote:override?'瑞士特定混凝土配方数据的假设替换；强度、耐久、供应与施工适用性未验证，非等效产品推荐':factorNote(e.material),storedCarbonKgC:mass*factor.storedCarbon};
  }
  function calculate(elements){const lines=elements.map(e=>({...e,...element(e)})),valid=lines.filter(e=>!e.error);return {lines,known:valid.length,total:lines.length,complete:valid.length===lines.length&&lines.length>0,value:valid.length?valid.reduce((s,e)=>s+e.value,0):null,production:valid.reduce((s,e)=>s+e.production,0),disposal:valid.reduce((s,e)=>s+e.disposal,0)};}
  function compare(a,b){const A=calculate(a),B=calculate(b),compatible=A.complete&&B.complete&&a.length===b.length&&a.every(e=>b.some(f=>f.id===e.id));return {A,B,compatible,delta:compatible?B.value-A.value:null,percent:compatible&&A.value!==0?(B.value-A.value)/A.value*100:null};}

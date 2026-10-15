@@ -89,6 +89,7 @@ internal sealed class SemanticProfile
         "carbonloop.rhino.semantic-profile/embedded-0.2.0",
         new Dictionary<string, string[]>
         {
+            ["finish"] = new[] { "ext finish", "int finish", "floor finish", "finish", "finishes", "饰面层", "饰面" },
             ["slab"] = new[] { "slab", "floor", "deck", "plate", "楼板", "板" },
             ["beam"] = new[] { "beam", "girder", "梁" },
             ["column"] = new[] { "column", "post", "pillar", "柱" },

@@ -9,6 +9,8 @@ assert.deepEqual(data[328],['11.017','09098784-8F4C-4C60-BD8D-39EB2145D8C4','Nat
 assert.equal(stone.density,2700);assert.equal(stone.production,19.1/40.5);assert.equal(stone.disposal,.514/40.5);assert.match(stone.conversionNote,/40.5 kg\/m²/);
 const marble=M.match({id:'58',name:'58_slab marble veined Carrara white texture-seamless',productType:'finish'});
 assert.equal(marble.material,'stone-natural-polished');assert.match(marble.matchBasis,/Carrara/);
+const finish=C.element({id:'F1',name:'ext.Finish',type:'finish',layer:'02_Building::Floors::ext.Finish',x:0,y:0,z:0,l:.8,w:.6,h:.02,sourceDimensions:[.8,.6,.02],material:'stone-natural-polished',quantityRequired:true,quantity:{kind:'net-volume',value:.00048,basis:'Rhino net volume'}});
+assert.equal(finish.area,.48);assert.ok(Math.abs(finish.volume-.0072)<1e-12);assert.ok(Math.abs(finish.value-.48*(19.1+.514))<1e-12);assert.match(finish.quantityWarning,/Rhino 净体积/);
 const all=M.sample().map(e=>({...e,...M.match(e.materialRecord)})),floor=all.filter(e=>e.floor==='1F'),r=C.calculate(floor);
 const expected=4.8*2300*(.0887+.0126)+2*(2*.4*.02+(.4-2*.02)*.012)*3*7850*(.73+.00693)+.96*439*(.286+.0492)+2.52*900*(.254+.0127);
 assert.ok(Math.abs(r.value-expected)<1e-8);assert.equal(r.known,6);assert.equal(r.complete,true);

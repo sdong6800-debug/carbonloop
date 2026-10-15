@@ -32,7 +32,12 @@
     for(const key of ['b','d','tf','tw'])if(Number.isFinite(quantity[key]))quantity[key]*=scale;
     if(Array.isArray(quantity.dimensions))quantity.dimensions=quantity.dimensions.map(v=>v*scale);
    }
-   objects.push({id:item.id,name:item.name||item.id,type:item.typeHint||'unknown',typeInference:item.typeInference?clone(item.typeInference):null,analysisEligible:item.analysisEligible!==false,eligibilityBasis:item.eligibilityBasis||'',floor:item.floor||'待确认',layer:item.layer||'',x,y,z,l,w,h,geometryBasis:item.geometry?.basis||'',previewAdjusted:item.geometry?.previewAdjusted===true,sourceDimensions:Array.isArray(item.geometry?.sourceDimensions)?item.geometry.sourceDimensions.map(v=>v*scale):null,quantityRequired:item.quantityRequired===true,materialRecord:item.material?{...clone(item.material),origin:item.material.origin||'Rhino 接入协议中的对象材料属性'}:{id:'',name:'',productType:'',grade:'',origin:'Rhino 接入协议未提供材料'},quantity});
+   let type=item.typeHint||'unknown',typeInference=item.typeInference?clone(item.typeInference):null;
+   const explicitType=typeInference?.source==='CarbonLoop.Type';
+   if(!explicitType&&/(^|::|[._\-\s])(?:ext\.?\s*)?finish(?:es)?($|::|[._\-\s])/i.test(item.layer||'')){
+    type='finish';typeInference={source:'web-semantic-guard',confidence:.98,basis:'图层名称明确包含 Finish，按饰面层识别，不作为结构楼板。'};
+   }
+   objects.push({id:item.id,name:item.name||item.id,type,typeInference,analysisEligible:item.analysisEligible!==false,eligibilityBasis:item.eligibilityBasis||'',floor:item.floor||'待确认',layer:item.layer||'',x,y,z,l,w,h,geometryBasis:item.geometry?.basis||'',previewAdjusted:item.geometry?.previewAdjusted===true,sourceDimensions:Array.isArray(item.geometry?.sourceDimensions)?item.geometry.sourceDimensions.map(v=>v*scale):null,quantityRequired:item.quantityRequired===true,materialRecord:item.material?{...clone(item.material),origin:item.material.origin||'Rhino 接入协议中的对象材料属性'}:{id:'',name:'',productType:'',grade:'',origin:'Rhino 接入协议未提供材料'},quantity});
   }
   return {valid:errors.length===0,errors,warnings,objects,metadata:{contractVersion:VERSION,sourceHost:payload?.source?.host||null,documentId:payload?.source?.documentId||null,unitSystem:payload?.source?.unitSystem||null,pluginVersion:payload?.source?.pluginVersion||null,semanticProfileVersion:payload?.source?.semanticProfileVersion||null,transmissionId:payload?.source?.transmissionId||null,sentAt:payload?.source?.sentAt||null,syncMode:payload?.source?.syncMode||'manual',syncReason:payload?.source?.syncReason||'用户发送',selectionMode:payload?.selection?.mode||null,receivedCount:payload?.objects?.length||0}};
  }

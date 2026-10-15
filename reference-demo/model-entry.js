@@ -2,7 +2,7 @@
  'use strict';
  const $=id=>document.getElementById(id),C=window.ModelCore,M=window.MaterialIntake,R=window.RhinoContract,NS='http://www.w3.org/2000/svg';
  const PREVIEW_LIMIT=180,TABLE_LIMIT=60;
- const types={slab:'楼板',beam:'梁',column:'柱',wall:'墙',foundation:'基础',roof:'屋面',glazing:'玻璃/幕墙',mullion:'幕墙框',door:'门',stair:'楼梯',other:'其他',unknown:'未识别'};
+ const types={slab:'楼板',finish:'楼地面饰面',beam:'梁',column:'柱',wall:'墙',foundation:'基础',roof:'屋面',glazing:'玻璃/幕墙',mullion:'幕墙框',door:'门',stair:'楼梯',other:'其他',unknown:'未识别'};
  let source=M.sample(),intakeStatus=M.contractStatus?.(),sourceMode='demo';const remembered=new Map();
  let rows=[],scope='floor',floor='1F',chosen=new Set(),selected='S01',group='all',scanned=false,readOnly=false,onDone,onCancel;
  const eligibleSource=()=>source.filter(e=>e.analysisEligible!==false);
@@ -54,12 +54,12 @@
  const sourceKey=r=>JSON.stringify([r.layer||'',r.sourceMaterialId,r.sourceMaterial,r.materialRecord?.grade||'']);
  const matchKey=r=>r.type+'|'+r.material+'|'+sourceKey(r);
  let learnedMappings={};
- try{learnedMappings=JSON.parse(localStorage.getItem('carbonloop.rhino.semantic-mappings.v1')||'{}');}catch(_){learnedMappings={};}
- function saveLearned(){try{localStorage.setItem('carbonloop.rhino.semantic-mappings.v1',JSON.stringify(learnedMappings));}catch(_){}}
+ try{learnedMappings=JSON.parse(localStorage.getItem('carbonloop.rhino.semantic-mappings.v2')||'{}');}catch(_){learnedMappings={};}
+ function saveLearned(){try{localStorage.setItem('carbonloop.rhino.semantic-mappings.v2',JSON.stringify(learnedMappings));}catch(_){}}
  function prepareRow(e){
   const row={...e,...M.match(e.materialRecord),sourceType:e.type,typeConfirmed:false,materialConfirmed:false,typeEdited:false,materialEdited:false};
   const learned=learnedMappings[sourceKey(row)];
-  if(learned?.type&&types[learned.type]){row.type=learned.type;row.typeInference={source:'confirmed-project-mapping',confidence:1,basis:'采用你此前确认的“图层＋原始材料”项目映射。'};}
+  if(learned?.type&&types[learned.type]&&!['CarbonLoop.Type','web-semantic-guard'].includes(row.typeInference?.source)){row.type=learned.type;row.typeInference={source:'confirmed-project-mapping',confidence:1,basis:'采用你此前确认的“图层＋原始材料”项目映射。'};}
   if(learned?.material&&C.materials.some(m=>m.id===learned.material)){row.material=learned.material;row.matchBasis='采用你此前确认的“图层＋原始材料”项目映射；本次仍可修改。';}
   return row;
  }
