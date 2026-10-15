@@ -5,8 +5,17 @@ const allowedChangeTypes=new Set(['thickness_increase','thickness_decrease','mat
 
 function changeTypes(before,after){
  const types=[];
- if(['x','y','z'].some(k=>before?.[k]!==after?.[k]))types.push('position_change');
- if(Number.isFinite(before?.h)&&Number.isFinite(after?.h)&&before.h!==after.h)types.push(after.h>before.h?'thickness_increase':'thickness_decrease');
+ const centers=e=>[e.x+e.l/2,e.y+e.w/2,e.z+e.h/2];
+ const origins=e=>[e.x,e.y,e.z];
+ // A size edit may be anchored either at one face (same origin) or about the
+ // centre (same centre). Neither is a user-requested relocation. Only report a
+ // position change when both reference descriptions moved.
+ const originMoved=origins(before).some((value,index)=>Math.abs(value-origins(after)[index])>1e-9);
+ const centreMoved=centers(before).some((value,index)=>Math.abs(value-centers(after)[index])>1e-9);
+ if(originMoved&&centreMoved)types.push('position_change');
+ const beforeThickness=before?.type==='finish'?before.finishThickness:before?.h,afterThickness=after?.type==='finish'?after.finishThickness:after?.h;
+ const dimensionsChanged=['l','w','h'].some(k=>before?.[k]!==after?.[k])||before?.type==='finish'&&beforeThickness!==afterThickness;
+ if(dimensionsChanged){const beforeVolume=before.type==='finish'?before.l*before.w*beforeThickness:before.l*before.w*before.h,afterVolume=after.type==='finish'?after.l*after.w*afterThickness:after.l*after.w*after.h;types.push(afterVolume>=beforeVolume?'thickness_increase':'thickness_decrease');}
  if(before?.material!==after?.material||before?.factorId!==after?.factorId)types.push('material_change');
  return types;
 }
@@ -37,7 +46,8 @@ function retrieve({before,after,project={},query='',limit=6}){
  if(!before||!after||before.id!==after.id)throw Error('结构知识检索的前后构件不匹配。');
  if(explicitForeignJurisdiction(project))return {version:raw.knowledge_base_version,status:'unsupported_jurisdiction',context:{jurisdiction:String(project.country||project.jurisdiction),change_types:changeTypes(before,after)},chunks:[]};
  const changes=changeTypes(before,after).filter(x=>allowedChangeTypes.has(x));
- const context={jurisdiction:'AU',state_or_territory:String(project.state_or_territory||project.region||''),building_class:String(project.building_class||''),approval_date:String(project.approval_date||project.project_approval_date||''),selected_edition:String(project.edition||project.code||''),edition_confirmed:project.edition_confirmed===true,element:after.type||'other',material:after.material||'unknown',change_types:changes,query:String(query||'').slice(0,1000)};
+ const structuralTypes=new Set(['slab','beam','column','wall']),element=structuralTypes.has(after.type)?after.type:'other';
+ const context={jurisdiction:'AU',state_or_territory:String(project.state_or_territory||project.region||''),building_class:String(project.building_class||''),approval_date:String(project.approval_date||project.project_approval_date||''),selected_edition:String(project.edition||project.code||''),edition_confirmed:project.edition_confirmed===true,element,model_element_type:after.type||'other',material:after.material||'unknown',change_types:changes,query:String(query||'').slice(0,1000)};
  if(!changes.length)return {version:raw.knowledge_base_version,status:'no_structural_change',context,chunks:[]};
  const candidates=raw.chunks.filter(chunk=>chunk.jurisdictions.includes('AU')&&(chunk.elements.includes(context.element)||chunk.elements.includes('building'))&&(chunk.materials.includes(context.material)||chunk.materials.includes('all'))&&changes.some(type=>chunk.change_types.includes(type)));
  const chunks=candidates.map(chunk=>({...chunk,retrieval_score:score(chunk,context),project_applicability:context.edition_confirmed&&context.state_or_territory&&context.building_class?'selected_project_context':'candidate_reference_only'})).sort((a,b)=>b.retrieval_score-a.retrieval_score||a.id.localeCompare(b.id)).slice(0,Math.max(1,Math.min(10,Number(limit)||6)));

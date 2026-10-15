@@ -56,7 +56,7 @@ CarbonLoop 把 AI 与确定性计算分开：
 4. 选择构件并运行 `CarbonLoopSend`。
 5. 可选 AI：解压 `CarbonLoop-AI-Connector-0.2.1.zip`，进入 `ai-service` 文件夹并双击 `connect-deepseek.cmd`，输入自己的完整 DeepSeek API Key 后保持窗口打开。
 
-详细说明见 [rhino-plugin/安装说明.md](rhino-plugin/安装说明.md)，演示脚本见 [演示步骤.md](演示步骤.md)。
+详细说明见 [rhino-plugin/安装说明.md](rhino-plugin/安装说明.md)，完整产品流程见 [CarbonLoop 产品使用手册](reference-demo/downloads/CarbonLoop_产品使用手册_简明版.pdf)，演示脚本见 [演示步骤.md](演示步骤.md)。
 
 ## 构建
 

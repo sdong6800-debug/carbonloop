@@ -6,7 +6,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
   const page=await browser.newPage({viewport:{width:1280,height:900}}),requests=[];
   await page.route('http://127.0.0.1:8515/**',route=>route.fulfill({status:503,body:'{}'}));
   await page.route('http://127.0.0.1:8514/**',async route=>{
-   if(route.request().url().endsWith('/health'))return route.fulfill({json:{configured:true,provider:'DeepSeek',model:'deepseek-flash',changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0'}});
+   if(route.request().url().endsWith('/health'))return route.fulfill({json:{configured:true,componentMatrixVersion:1,provider:'DeepSeek',model:'deepseek-flash',changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0'}});
    const body=route.request().postDataJSON();requests.push(body);
    return route.fulfill({json:{mode:'live_ai',provider:'MOCK',report:{rag:{retrievedEvidence:[{id:'CL-RULE-THICKER-SLAB',source_title:'CarbonLoop 前期结构知识规则包',locator:'ED-SLAB-THICKER',authority:'early_design_screening',project_applicability:'candidate_reference_only'}]}},answer:{status:'not_determined',priorityCheckIds:['analysis'],reason:'自动分析已运行。',nextStep:'继续结构验证。',citationIds:['CL-RULE-THICKER-SLAB']}}});
   });

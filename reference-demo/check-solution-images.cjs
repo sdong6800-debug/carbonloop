@@ -4,13 +4,15 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
  const browser=await chromium.launch({channel:'msedge',headless:true});
  try{
   const p=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[],posts=[];let imageCap=1;
+  await require('./test-baseline-route.cjs')(p);
+  await p.route('http://127.0.0.1:8515/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({available:false,revision:0})}));
   p.on('pageerror',e=>errors.push(e.message));
   await p.route('http://127.0.0.1:8514/**',async r=>{
-   if(r.request().url().endsWith('/health'))return r.fulfill({json:{configured:true,changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0',solutionVersion:1,solutionImagesVersion:imageCap,provider:'DeepSeek',model:'deepseek-flash'}});
-   assert(r.request().url().endsWith('/solutions'));posts.push(r.request().postDataJSON());
+   if(r.request().url().endsWith('/health'))return r.fulfill({json:{configured:true,componentMatrixVersion:1,changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0',solutionVersion:2,solutionImagesVersion:imageCap,provider:'DeepSeek',model:'deepseek-flash'}});
+   if(!r.request().url().endsWith('/solutions'))return r.fulfill({status:503,json:{error:'not part of this test'}});posts.push(r.request().postDataJSON());
    return r.fulfill({json:{mode:'live_ai',imageUsed:true,answer:{preferredId:'material-S01',reason:'根据当前构件与截图标注，先核实不改尺寸的材料路径。',nextStep:'核实候选材料性能。'}}});
   });
-  await p.goto('http://127.0.0.1:8513/demo.html');await p.click('#entryRead');await p.click('#entryConfirmGroup');await p.click('#entryContinue');await p.click('#reportExplore');
+  await p.goto('http://127.0.0.1:8513/demo.html');await p.click('#entryRead');await p.click('#entryConfirmGroup');if(await p.isDisabled('#entryContinue'))await p.check('#entryPartial');await p.click('#entryContinue');await p.click('#reportExplore');
   const png=await p.locator('#model').screenshot();
   await p.check('#solutionConsent');
   await p.setInputFiles('#solutionImage',{name:'model.png',mimeType:'image/png',buffer:png});

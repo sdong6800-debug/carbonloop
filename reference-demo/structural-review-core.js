@@ -3,7 +3,7 @@
  const C=typeof module!=='undefined'&&module.exports?require('./model-core.js'):root.ModelCore;
  const Screening=typeof module!=='undefined'&&module.exports?require('./structural-screening-core.js'):root.StructuralScreening;
  const nccReference='https://www.abcb.gov.au/editions/ncc-2022/adopted/volume-one/b-structure/part-b1-structural-provisions';
- const profile=Object.freeze({country:'AU',label:'澳大利亚 · 混凝土楼板',state_or_territory:null,building_class:null,project_approval_date:null,edition_confirmed:false,clauses_loaded:false,reference_only:true});
+ const profile=Object.freeze({country:'AU',label:'澳大利亚 · 前期结构影响',state_or_territory:null,building_class:null,project_approval_date:null,edition_confirmed:false,clauses_loaded:false,reference_only:true});
  const sources=[
   {id:'au-ncc',title:'NCC · 项目适用要求',url:nccReference,scope:'NCC 2022 Volume One Part B1 的公开参考（该卷为 Class 2–9 建筑）；不是为本项目选定的版本。州或领地、建筑类别、项目审批时间与适用版本待确认。'},
   {id:'au-1170-0',title:'AS/NZS 1170.0 · 设计原则与荷载组合',url:nccReference,scope:'NCC B1D2 引用的一般设计程序。链接是 NCC 引用依据，不是标准全文；尚未加载可执行的荷载组合规则。'},
@@ -22,8 +22,14 @@
   const valid=e=>['x','y','z','l','w','h'].every(k=>Number.isFinite(e[k]))&&['l','w','h'].every(k=>e[k]>0);
   if(!valid(before)||!valid(after))throw Error('构件尺寸无效');
   const old=C.element(before),next=C.element(after),changed=JSON.stringify(before)!==JSON.stringify(after),concrete=after.type==='slab'&&['concrete','concrete-cast','concrete-precast'].includes(after.material);
-  const thickness=after.type==='slab'?{before_mm:before.h*1000,after_mm:after.h*1000,delta_mm:(after.h-before.h)*1000}:null;
-  const rows=Object.entries(checks).filter(([id])=>concrete||['basis','analysis'].includes(id)).map(([id,c])=>({id,...c,sourceIds:concrete?c.sourceIds:[],state:'not_checked'}));
+  // The RAG library also contains generic Australian action/load-path gates
+  // for finishes and other modelled components.  Only the AS 3600 section
+  // calculator remains limited to concrete slabs.
+  const generic=changed&&after.type!=='unknown';
+  const effectiveThickness=e=>e.type==='slab'?e.h:e.type==='finish'?(Number.isFinite(e.finishThickness)&&e.finishThickness>0?e.finishThickness:C.factorFor(e.material)?.sourceThickness):null;
+  const beforeThickness=effectiveThickness(before),afterThickness=effectiveThickness(after);
+  const thickness=Number.isFinite(beforeThickness)&&Number.isFinite(afterThickness)?{before_mm:beforeThickness*1000,after_mm:afterThickness*1000,delta_mm:(afterThickness-beforeThickness)*1000}:null;
+  const rows=Object.entries(checks).filter(([id])=>concrete||['basis','analysis'].includes(id)).map(([id,c])=>({id,...c,sourceIds:concrete?c.sourceIds:c.sourceIds.filter(sourceId=>sourceId!=='au-3600'),state:'not_checked'}));
   const comparable=!old.error&&!next.error;
   const facts={element_id:after.id,element_type:after.type,thickness,
    before:{dimensions_m:[before.l,before.w,before.h],material:before.material,volume_m3:old.error?null:old.volume,carbon_kgco2e:old.error?null:old.value},
@@ -32,13 +38,15 @@
    carbon_delta_kgco2e:comparable?next.value-old.value:null,carbon_percent:comparable&&old.value!==0?(next.value-old.value)/old.value*100:null,
    carbon_boundary:'当前构件，材料生产＋处置；非完整生命周期，非整栋建筑。瑞士 KBOB 因子，不是澳洲碳数据库。',
    carbon_mass_proxy_delta_kg:comparable?next.mass-old.mass:null,quantity_basis:'碳计算数据库密度的材料质量差，不是已核实的结构自重荷载'};
-  return {schema:'structural-change-review-v1',status:'not_determined',can_adopt:false,changed,scope_supported:concrete,
+  const genericSources=sources.filter(source=>source.id!=='au-3600');
+  const genericMissing=['核实构件如何连接或支承','项目用途荷载与相邻结构条件','确认材料单位重量及新增永久荷载','确认澳洲州或领地、建筑类别、审批时间与适用规范条款','结构分析及规范验算工具'];
+  return {schema:'structural-change-review-v1',status:'not_determined',can_adopt:false,changed,scope_supported:concrete||generic,section_capacity_applicable:concrete,review_scope:concrete?'concrete_slab':'generic_component',
    headline:changed?'尺寸或材料已改变，结构可用性尚不能判断':'当前方案也尚未完成结构核验',
-   explanation:!concrete?'本轮结构资料只整理了混凝土楼板的检查框架；该构件需相应结构体系依据。':thickness?.delta_mm>0?'楼板加厚不能直接判为更安全，需重新检查自重变化及承载、变形等影响。':thickness?.delta_mm<0?'楼板变薄后，需重新检查承载、变形和构造要求，不能只看减碳量。':'需同时核实材料性能与受力条件，不能根据碳因子判断结构等效。',
+   explanation:!generic&&!concrete?'当前构件类型没有可用的结构检索入口。':!concrete?'这次修改可以检索通用的荷载与作用依据；它可能改变材料用量或永久荷载，但不能据此判断主体结构可用。':thickness?.delta_mm>0?'楼板加厚不能直接判为更安全，需重新检查自重变化及承载、变形等影响。':thickness?.delta_mm<0?'楼板变薄后，需重新检查承载、变形和构造要求，不能只看减碳量。':'需同时核实材料性能与受力条件，不能根据碳因子判断结构等效。',
    facts,screening:Screening.assess(before,after),checks:rows,project:{region:String(project.region||'').slice(0,120),code:String(project.code||'').slice(0,160),recorded_only:true},
-   reference_profile:{...profile},evidence:concrete?sources:[],basis_status:'澳洲规范方向已选择；项目版本待确认，单项截面抗弯工具须有工程输入才运行，不是完整规范核验',
+   reference_profile:{...profile},evidence:concrete?sources:generic?genericSources:[],basis_status:concrete?'澳洲规范方向已选择；项目版本待确认，单项截面抗弯工具须有工程输入才运行，不是完整规范核验':'澳洲通用作用与荷载方向已选择；项目版本和构件连接仍待确认，不是完整规范验算',
    execution:{llm_called:false,solver_run:false,rulebook_retrieval_run:true,normative_rules_run:false},
-   missing:['有效分析模型与构件连接','核实的力学材料及配筋数据','项目荷载、组合和支承条件','确认澳洲州或领地、建筑类别、审批时间与适用规范条款','结构分析及规范验算工具']};
+   missing:concrete?['有效分析模型与构件连接','核实的力学材料及配筋数据','项目荷载、组合和支承条件','确认澳洲州或领地、建筑类别、审批时间与适用规范条款','结构分析及规范验算工具']:genericMissing};
  }
  const api={profile,sources,checks,assess};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.StructuralReview=api;
 })(typeof window!=='undefined'?window:globalThis);

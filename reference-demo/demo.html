@@ -1,24 +1,24 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarbonLoop · 模型碳分析工作台</title><link rel="stylesheet" href="demo.css?v=20261015-rc5"><link rel="stylesheet" href="structure.css?v=20261005-workbench-1"><link rel="stylesheet" href="model-entry.css?v=20261015-rc6"><script defer src="material-estimate.js?v=20261005-workbench-1"></script><script defer src="model-core.js?v=20261015-rc5"></script><script defer src="rhino-contract.js?v=20261015-rc5"></script><script defer src="material-intake.js?v=20261012-natural-stone-1"></script><script defer src="structure.js?v=20261005-workbench-1"></script><script defer src="model-entry.js?v=20261015-rc6"></script><script defer src="change-core.js?v=20261005-workbench-1"></script><script defer src="demo.js?v=20261015-rc5"></script><script defer src="rhino-live.js?v=20261015-rc1"></script><link rel="stylesheet" href="ai-panel.css?v=20261005-workbench-1"><script defer src="ai-core.js?v=20261005-workbench-1"></script><script defer src="ai-panel.js?v=20261006-change-ai-4"></script><link rel="stylesheet" href="change-view.css?v=20261015-rc5"><script defer src="change-view.js?v=20261015-rc5"></script><link rel="stylesheet" href="workbench-ui.css?v=20261007-contract-2"><script defer src="workbench-ui.js?v=20261007-contract-2"></script><link rel="stylesheet" href="journey.css?v=20261007-journey-1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarbonLoop · 模型碳分析工作台</title><link rel="stylesheet" href="demo.css?v=20261015-rc5"><link rel="stylesheet" href="structure.css?v=20261005-workbench-1"><link rel="stylesheet" href="model-entry.css?v=20261015-rc6"><script defer src="material-estimate.js?v=20261005-workbench-1"></script><script defer src="model-core.js?v=20261015-partial-1"></script><script defer src="rhino-contract.js?v=20261015-rc5"></script><script defer src="material-intake.js?v=20261012-natural-stone-1"></script><script defer src="structure.js?v=20261005-workbench-1"></script><script defer src="model-entry.js?v=20261015-rc6"></script><script defer src="change-core.js?v=20261015-all-components-2"></script><script defer src="demo.js?v=20261016-variants-1"></script><script defer src="rhino-live.js?v=20261015-port-pair-1"></script><link rel="stylesheet" href="ai-panel.css?v=20261005-workbench-1"><script defer src="ai-core.js?v=20261015-materials-1"></script><script defer src="ai-panel.js?v=20261006-change-ai-4"></script><link rel="stylesheet" href="change-view.css?v=20261015-rc5"><script defer src="change-view.js?v=20261015-bugfix-1"></script><link rel="stylesheet" href="workbench-ui.css?v=20261007-contract-2"><script defer src="workbench-ui.js?v=20261007-contract-2"></script><link rel="stylesheet" href="journey.css?v=20261007-journey-1"></head>
 <body>
-<script src="excel-export.js?v=20261006-1"></script>
+<script src="excel-export.js?v=20261016-variants-1"></script>
 <link rel="stylesheet" href="structural-review.css?v=20261007-rag-1">
-<script defer src="structural-rulebook.js?v=20261006-rules-1"></script>
-<script defer src="structural-screening-core.js?v=20261006-rules-1"></script>
-<script defer src="structural-review-core.js?v=20261006-checks-6"></script>
-<script defer src="structural-review-ui.js?v=20261015-auto-ai-1"></script>
+<script defer src="structural-rulebook.js?v=20261015-all-components-2"></script>
+<script defer src="structural-screening-core.js?v=20261015-all-components-2"></script>
+<script defer src="structural-review-core.js?v=20261015-rag-generic-1"></script>
+<script defer src="structural-review-ui.js?v=20261015-all-components-3"></script>
 <link rel="stylesheet" href="interaction-shell.css?v=20261005-interaction-1">
 <link rel="stylesheet" href="object-workspace.css?v=20261015-rc1">
-<script defer src="interaction-shell.js?v=20261006-inline-7"></script>
-<script defer src="edit-feedback.js?v=20261015-auto-ai-1"></script>
-<script defer src="solution-core.js?v=20261006-solutions-1"></script>
-<script defer src="solution-panel.js?v=20261007-solution-flow-1"></script>
+<script defer src="interaction-shell.js?v=20261015-partial-1"></script>
+<script defer src="edit-feedback.js?v=20261015-rag-generic-1"></script>
+<script defer src="solution-core.js?v=20261015-materials-2"></script>
+<script defer src="solution-panel.js?v=20261016-variants-1"></script>
 <script defer src="solution-attachment.js?v=20261006-solution-images-2"></script>
 <script defer src="journey.js?v=20261007-journey-1"></script>
-<link rel="stylesheet" href="solution-panel.css?v=20261007-solution-flow-1">
-<link rel="stylesheet" href="comparison-decision.css?v=20261007-decision-1">
-<script defer src="comparison-decision.js?v=20261007-decision-1"></script>
+<link rel="stylesheet" href="solution-panel.css?v=20261016-variants-1">
+<link rel="stylesheet" href="comparison-decision.css?v=20261016-variants-1">
+<script defer src="comparison-decision.js?v=20261016-variants-2"></script>
 <header><a class="brand" href="demo.html"><span class="brand-mark">C</span> CarbonLoop <small>设计决策工作台</small></a><nav aria-label="主导航"><a href="demo.html" aria-current="page">模型分析</a><a href="dashboard.html">案例参考</a><a href="index.html">木材时间线</a><a href="rhino-setup.html">Rhino 连接</a><button class="text-button" data-open="evidence">计算依据 ↗</button></nav></header>
 <main>
 <div class="page-heading"><div><p class="eyebrow">MODEL / MATERIAL / CARBON</p><h1>模型碳分析</h1></div><span class="status">● 本地示例 · 未连接 Rhino</span></div>
@@ -29,7 +29,7 @@
 <div id="app" hidden>
 <nav class="flow-steps" aria-label="分析步骤"><button data-step="1">01 <span>碳分析结果</span></button><button data-step="2">02 <span>探索改进</span></button><button data-step="3" disabled>03 <span>调整并看变化</span></button><button data-step="4" disabled>04 <span>对比与保留</span></button></nav>
 <section class="flow-guide panel" aria-live="polite"><div><p class="eyebrow" id="flowKicker"></p><h2 id="flowTitle"></h2><p id="flowDescription"></p></div><div class="flow-actions"><button id="flowBack" class="outline" hidden>上一步</button><button id="flowNext"></button></div></section>
-<section id="explore" class="panel explore" hidden><h2>减少用量，还是更换材料配方？</h2><p class="help">两种方式都可以试。原模型保持不变，修改后立即对比碳排；一次先改一项更容易看清原因。</p><h3>改尺寸 · 手动试调材料用量</h3><div class="direction-options"><label><input type="radio" name="direction" value="slab" checked><b>调整楼板厚度</b><span>观察材料用量变化，再检查变形与承载要求。</span></label><label><input type="radio" name="direction" value="column"><b>调整柱截面</b><span>方柱改边长，演示钢柱改翼缘厚度。</span></label><label><input type="radio" name="direction" value="wall"><b>调整墙体厚度</b><span>保持墙长、高度与中心位置不变。</span></label></div><p class="inherited-note">比较约束：初始跨度、柱高、构件数量与已填荷载、支座条件保持一致。改变条件后会单独提示，不再视为同条件比较。</p><p class="help">以下是手动几何探索，不是 AI 自动优化。展开上方材料助手可尝试更换配方；两者都不能代替结构求解与专业复核。</p><button id="copy">创建改进草案 →</button><p id="candidateExists" class="help" hidden>改进草案已存在。返回“调整并看变化”继续编辑，不会覆盖你的修改。</p></section>
+<section id="explore" class="panel explore" hidden><h2>从本次模型中选择要改进的构件</h2><p class="help">所有已识别构件都会进入同一个工作台。你可以逐个调整材料；几何语义可靠时也可调整对应尺寸，并立即查看整体碳排变化。</p><div class="direction-options"><label><input type="radio" name="direction" value="workspace" checked><b>打开全部构件</b><span>楼板、梁、柱、墙、基础、屋面、门窗、饰面和其他构件都保留在同一列表中。</span></label></div><p class="inherited-note">没有可靠净截面或构造层信息的复杂构件，尺寸应回 Rhino 修改后重新同步；系统不会用包围盒假装工程量。</p><p class="help">RAG 会按当前构件和改动类型检索依据。碳比较与 AI 提醒都不等于结构、围护、防火或施工性能已经验证。</p><button id="copy">进入构件改进 →</button><p id="candidateExists" class="help" hidden>改进草案已存在。返回“调整并看变化”继续编辑，不会覆盖你的修改。</p></section>
 <div class="project-bar"><div><b>示例项目 / 单跨结构单元</b><span id="sourceLabel">内置示例几何 · 单位 m</span><span id="entryCoverage" class="help"></span></div><div class="scenario-tools"><button id="recheckModel" class="outline">查看 / 修正核对记录</button><div class="tabs" aria-label="当前方案"><button id="tabA" aria-pressed="true">碳分析结果</button><button id="tabB" aria-pressed="false" disabled>改进草案</button></div><button id="export" class="outline" disabled>下载数据与依据 ↓</button></div></div>
 <section id="candidateReview" class="panel candidate-review" hidden><div class="panelhead"><h2>候选方案检查</h2><span id="reviewState" class="mini-tag">待检查</span></div><div class="review-grid"><div><h3>碳排放</h3><p id="carbonReview"></p></div><div><h3>结构与使用条件</h3><p id="engineeringReview"></p></div><div><h3>能否采用？</h3><p>尚不能判断。结构求解与规范校核未执行，即使碳排更低，也只是一份待验证草案。</p></div></div><p id="conditionsReview" class="help"></p><details><summary>查看待补充或冲突的输入</summary><ul id="reviewIssues"></ul></details><div class="flow-actions"><button id="checkCandidate">调整并看变化输入</button><button id="editCandidateStructure" class="outline">补充候选的结构条件 ↗</button></div></section>
 <div class="workspace">

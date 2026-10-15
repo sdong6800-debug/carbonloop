@@ -26,6 +26,7 @@
  const rules=Object.freeze([
   Object.freeze({id:'AU-NCC-ACTION-RESISTANCE',title:'符合性必须同时比较作用效应与结构抗力',level:'normative_reference',appliesTo:['building','element'],triggers:['any_structural_change'],requiredInputs:['适用规范版本','作用与组合','结构分析结果','相应材料抗力'],executor:null,sourceIds:['ncc-b1d2'],outcome:'没有作用与抗力两侧的数据时，不输出“符合规范”或“结构安全”。'}),
   Object.freeze({id:'AU-PERMANENT-ACTION-DELTA',title:'尺寸或单位重量变化会改变永久作用',level:'normative_reference',appliesTo:['slab'],triggers:['thickness_change','material_change'],requiredInputs:['构件尺寸','材料单位重量'],executor:'solid_slab_self_weight_ratio',sourceIds:['ncc-b1d3'],outcome:'可在平面范围和材料单位重量不变时计算楼板自身重量的相对变化；不等于总楼面荷载或下部构件内力变化。'}),
+  Object.freeze({id:'AU-GENERIC-PERMANENT-ACTION',title:'构件尺寸或材料变化需要重新核实永久作用',level:'normative_reference',appliesTo:['element'],triggers:['dimension_change','material_change'],requiredInputs:['构件实际净量','材料单位重量','连接与支承关系'],executor:null,sourceIds:['ncc-b1d3'],outcome:'构件材料量或单位重量改变后，应重新确认新增或减少的永久作用怎样传给相邻构件；碳数据库质量只作前期代理，不是结构荷载输入。'}),
   Object.freeze({id:'AU-CONCRETE-RESISTANCE-ROUTE',title:'混凝土构件抗力须进入相应混凝土结构设计检查',level:'normative_reference',appliesTo:['concrete_slab'],triggers:['thickness_change','material_change'],requiredInputs:['结构体系与支承','材料力学性能','荷载与组合','分析结果','必要的构造资料'],executor:null,sourceIds:['ncc-b1d4'],outcome:'当前只给出后续检查路径，不用碳因子或几何比例代替 AS 3600 结构判断。'}),
   Object.freeze({id:'ED-SLAB-THINNER',title:'楼板减薄优先检查承载与正常使用表现',level:'early_design_screening',appliesTo:['concrete_slab'],triggers:['thickness_decrease'],requiredInputs:['有效跨度与支承方式','楼面用途和荷载','材料与结构体系'],executor:'screen_thinner_slab',sourceIds:['ncc-b1d2','ncc-b1d4'],outcome:'减薄可以降低材料用量，但必须继续核实承载、变形、冲切和构造等适用项目。'}),
   Object.freeze({id:'ED-SLAB-THICKER',title:'楼板加厚会把新增自重传给支承体系',level:'early_design_screening',appliesTo:['concrete_slab'],triggers:['thickness_increase'],requiredInputs:['支承与传力关系','材料单位重量','相关梁柱墙基础条件'],executor:'screen_thicker_slab',sourceIds:['ncc-b1d2','ncc-b1d3'],outcome:'加厚并不自动表示整体结构更安全；需检查新增永久作用及其对支承构件的影响。'}),
@@ -36,18 +37,21 @@
  function isConcreteSlab(e){return !!e&&e.type==='slab'&&['concrete','concrete-cast','concrete-precast'].includes(e.material);}
  function same(a,b,key){return (a?.[key]??null)===(b?.[key]??null);}
  function changed(before,after){
+  const center=e=>[e.x+e.l/2,e.y+e.w/2,e.z+e.h/2],origin=e=>[e.x,e.y,e.z],dimensions=['l','w','h'].some(k=>!same(before,after,k))||!same(before,after,'finishThickness');
+  const originMoved=origin(before).some((value,index)=>Math.abs(value-origin(after)[index])>1e-9),centreMoved=center(before).some((value,index)=>Math.abs(value-center(after)[index])>1e-9);
   return {
-   position:['x','y','z'].some(k=>!same(before,after,k)),
-   thickness:Number.isFinite(before?.h)&&Number.isFinite(after?.h)&&before.h!==after.h,
-   thinner:Number.isFinite(before?.h)&&Number.isFinite(after?.h)&&after.h<before.h,
-   thicker:Number.isFinite(before?.h)&&Number.isFinite(after?.h)&&after.h>before.h,
+   position:originMoved&&centreMoved,
+   dimensions,
+   thickness:dimensions,
+   thinner:dimensions&&before.l*before.w*before.h>after.l*after.w*after.h,
+   thicker:dimensions&&before.l*before.w*before.h<after.l*after.w*after.h,
    material:!same(before,after,'material')||!same(before,after,'factorId')
   };
  }
  function matches(rule,before,after,delta){
   const concrete=isConcreteSlab(after),type=concrete?'concrete_slab':after?.type;
   if(!rule.appliesTo.some(x=>x==='element'||x==='building'||x===type||x===after?.type))return false;
-  return rule.triggers.some(t=>t==='any_structural_change'&&(delta.position||delta.thickness||delta.material)||t==='position_change'&&delta.position||t==='thickness_change'&&delta.thickness||t==='thickness_decrease'&&delta.thinner||t==='thickness_increase'&&delta.thicker||t==='material_change'&&delta.material);
+  return rule.triggers.some(t=>t==='any_structural_change'&&(delta.position||delta.dimensions||delta.material)||t==='position_change'&&delta.position||t==='dimension_change'&&delta.dimensions||t==='thickness_change'&&delta.thickness||t==='thickness_decrease'&&delta.thinner||t==='thickness_increase'&&delta.thicker||t==='material_change'&&delta.material);
  }
  function retrieve(before,after){
   if(!before||!after||before.id!==after.id)throw Error('前后构件不匹配');

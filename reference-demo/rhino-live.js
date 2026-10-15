@@ -1,6 +1,7 @@
 (function(){
  'use strict';
- const endpoint='http://127.0.0.1:8515',topStatus=document.querySelector('.page-heading .status');
+ const sitePort=Number(window.location.port)||8513;
+ const endpoint=`http://127.0.0.1:${sitePort+2}`,topStatus=document.querySelector('.page-heading .status');
  // Start each page load from revision 0 so refreshing/reopening the workbench
  // restores the latest Rhino payload. Session storage must not suppress the
  // import when the page's in-memory model has been reset.

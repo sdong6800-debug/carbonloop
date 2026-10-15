@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {outputText,parseResponseJson}=require('./response-json.cjs');
+const value={summary:'已知小计',drivers:['混凝土']};
+const response=text=>({status:'completed',output:[{type:'message',content:[{type:'output_text',text}]}]});
+assert.deepEqual(parseResponseJson(response(JSON.stringify(value))),value);
+assert.deepEqual(parseResponseJson(response('```json\n'+JSON.stringify(value)+'\n```')),value);
+assert.deepEqual(parseResponseJson({output_text:JSON.stringify(value)}),value);
+assert.deepEqual(parseResponseJson(response('说明：'+JSON.stringify(value))),value);
+assert.equal(outputText({output:[{output_text:'a'}]}),'a');
+assert.throws(()=>parseResponseJson(response('这不是结构化结果')),/invalid_json/);
+assert.throws(()=>parseResponseJson({output:[]}),/empty_output/);
+console.log('PASS Responses output extraction, fenced JSON compatibility, balanced object recovery, and invalid prose rejection.');

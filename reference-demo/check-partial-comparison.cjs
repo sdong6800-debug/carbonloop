@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('node:assert/strict'),C=require('./model-core.js');
+const baseline=[{id:'known',type:'slab',material:'concrete',l:4,w:3,h:.2,x:0,y:0,z:0},{id:'missing',type:'other',material:'unknown',l:1,w:1,h:1,x:0,y:0,z:0}];
+const candidate=C.clone(baseline);candidate[0].h=.18;
+const partial=C.compare(baseline,candidate);
+assert.equal(partial.compatible,true);assert.equal(partial.complete,false);assert.equal(partial.partial,true);assert.equal(partial.known,1);assert.equal(partial.total,2);assert.equal(partial.missing,1);assert(partial.delta<0);
+const changedCoverage=C.clone(candidate);changedCoverage[1].material='concrete';
+assert.equal(C.compare(baseline,changedCoverage).compatible,false);assert.equal(C.compare(baseline,changedCoverage).delta,null);
+const none=[{...baseline[1]}];assert.equal(C.compare(none,none).compatible,false);
+console.log('PASS matched-known partial comparison, missing-to-zero guard, and zero-known rejection.');

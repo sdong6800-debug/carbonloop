@@ -88,7 +88,7 @@
   $('scopeDifference').textContent=comparison.compatible?signed(comparison.delta):'暂不能比较';
   $('scopeDifference').dataset.trend=comparison.delta<0?'down':comparison.delta>0?'up':'same';
   $('scopeCount').textContent=s.baseline.length+' 个构件';$('editedCount').textContent=changed+' 个已修改';
-  $('scopeCoverage').textContent=comparison.compatible?changed+' 个构件已修改':'已知部分 · '+comparison.B.known+'/'+comparison.B.total+' 个可计算';
+  $('scopeCoverage').textContent=comparison.compatible?(comparison.partial?`已知部分 ${comparison.known}/${comparison.total} 可比较 · ${changed} 个已修改`:changed+' 个构件已修改'):'两方案可计算范围不一致';
  }
  // Accessible view state lives in the same document. Nothing is duplicated or re-created per render.
  function sync(){const s=W.state();document.body.dataset.productStep=s.step;rail.hidden=s.step!==3;

@@ -22,6 +22,6 @@ assert.equal(C.element({...floor[0],material:'unknown'}).value,null);assert.equa
 assert.equal(C.factorFor('glass').id,'03.006');assert.equal(C.factorFor('aluminium').id,'06.002');assert.equal(C.factorFor('gypsum').id,'03.008');assert.equal(C.factorFor('steel-tube').id,'06.012');
 assert.ok(C.element({...floor[0],h:NaN}).error);
 const wood=C.element(floor.find(e=>e.material==='timber-glulam'));assert.ok(wood.storedCarbonKgC>0);assert.equal(wood.value,wood.mass*(.286+.0492));
-const next=C.clone(floor);next[0].h=.18;assert.ok(C.compare(floor,next).delta<0);assert.equal(C.compare(all,all).compatible,false);
+const next=C.clone(floor);next[0].h=.18;assert.ok(C.compare(floor,next).delta<0);const partial=C.compare(all,all);assert.equal(partial.compatible,true);assert.equal(partial.partial,true);assert.equal(partial.complete,false);
 console.log('PASS source workbook hash and all 15 rows; natural-stone unit conversion, expanded material matching, quantity guards, missing data, wood accounting, baseline and multi-material arithmetic');
 console.log(JSON.stringify({firstFloor:r.value,production:r.production,disposal:r.disposal,allKnownSubtotal:C.calculate(all).value}));

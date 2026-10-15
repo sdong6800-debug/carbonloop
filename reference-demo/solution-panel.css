@@ -9,7 +9,7 @@
 #solutionStatus{font-size:13px;color:var(--muted);line-height:1.7}#solutionAdvice{background:#203b3a;padding:14px;border-radius:6px;font-size:13px;line-height:1.7}
 #solutionCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:16px}.solution-card{padding:16px;border:1px solid var(--line);border-radius:8px;min-width:0;background:#102126}
 .solution-tag{font-size:11px;color:#dfc797}.solution-card h3{font-size:15px;line-height:1.5}.solution-card>strong{display:block;color:var(--accent);font-size:20px;margin:8px 0 12px}.solution-card p{font-size:12px;line-height:1.65}.solution-change,.solution-impact,.solution-structure{display:grid;grid-template-columns:70px 1fr;gap:8px;padding:8px 0;margin:0;border-top:1px solid #26383f}.solution-change b,.solution-impact b,.solution-structure b{font-weight:500;color:var(--muted)}.solution-structure span{color:#e5c88f}.solution-caveat{display:none}.solution-card>label{display:block;margin:14px 0 10px}.solution-card>button{width:100%}
-#solutions button:disabled{opacity:.5;cursor:not-allowed}#solutionBasis a{color:var(--accent)}
+#solutions button:disabled{opacity:.5;cursor:not-allowed}#solutionBasis a{color:var(--accent)}.solution-saved{margin-top:14px;padding:10px 12px;border:1px solid #3d6258;border-radius:6px;background:#19302b;color:#9edbc8;font-size:11px!important}
 #solutionAttachment{margin:10px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
 .solution-upload{display:block;cursor:pointer;color:var(--accent)}.solution-upload span{font-size:11px;color:var(--muted);margin-left:8px}
 #solutionImage{display:block;margin:8px 0;max-width:100%;font-size:12px}#solutionImageStatus{font-size:11px!important;color:var(--muted);line-height:1.6}

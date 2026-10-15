@@ -12,7 +12,7 @@ let latest=null,revision=0;
 
 function originAllowed(origin){
  if(!origin)return true;
- try{const url=new URL(origin);return ['127.0.0.1','localhost'].includes(url.hostname)&&url.port==='8513';}catch{return false;}
+ try{const url=new URL(origin);return ['127.0.0.1','localhost'].includes(url.hostname)&&url.port===String(sitePort);}catch{return false;}
 }
 function headers(req){
  const origin=req.headers.origin;

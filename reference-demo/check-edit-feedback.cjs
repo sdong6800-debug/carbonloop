@@ -6,7 +6,7 @@ const assert=require('node:assert/strict'),{chromium}=require('playwright');
   const p=await b.newPage({viewport:{width:1440,height:1100}}),errors=[],requests=[];
   p.on('pageerror',e=>errors.push(e.message));
   await p.route('http://127.0.0.1:8514/**',async r=>{
-   if(r.request().url().endsWith('/health'))return r.fulfill({json:{configured:true,changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0',provider:'MOCK'}});
+   if(r.request().url().endsWith('/health'))return r.fulfill({json:{configured:true,componentMatrixVersion:1,changeReviewVersion:5,rulebookVersion:'au-early-design-0.1.0',structuralRagVersion:'au-early-design-rag-0.1.0',provider:'MOCK'}});
    assert(r.request().url().endsWith('/structural-review'));
    const body=r.request().postDataJSON();requests.push(body);
    await r.fulfill({json:{mode:'live_ai',report:{rag:{retrievedEvidence:[{id:'CL-RULE-THICKER-SLAB',source_title:'CarbonLoop 前期结构知识规则包',locator:'ED-SLAB-THICKER',source_url:null,authority:'early_design_screening',project_applicability:'candidate_reference_only'}]}},answer:{status:'not_determined',priorityCheckIds:['analysis'],nextData:'荷载与支承',reason:body.after.h<body.before.h?'减薄后需要重新核实承载和变形。':'加厚会增加楼板自重，需要检查支承构件。',nextStep:'确认配筋与修改后的设计内力。',citationIds:['CL-RULE-THICKER-SLAB']}}});

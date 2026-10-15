@@ -6,7 +6,8 @@
  const documents=[
   {id:'scope-v1',title:'项目约束：本轮只研究材料配方',kind:'项目规则，非工程规范',tags:['concrete','concrete-cast'],text:'保持构件 ID、类别、位置、尺寸、数量、钢筋及已填结构条件不变。只对一个通用或现浇混凝土构件试换材料碳数据。不得声称结构合格或已验证材料等效。'},
   {id:'kbob-concrete-v9',title:'KBOB 通用混凝土与 Q-A230 配方记录',kind:'数据库条目',tags:['concrete','concrete-cast'],url:C.factorSource.url,text:'基准 01.002：F38=2300 kg/m³，AA38=0.0887、AB38=0.0126 kg CO2e/kg。候选 01.002.13：F53=2367.6，AA53=0.0559、AB53=0.0126。两者均不含钢筋。候选是瑞士特定配方，不是项目所在地可用或强度等效的证明。'},
-  {id:'limits-v1',title:'比较边界与待验证事项',kind:'项目计算规则，非工程规范',tags:['concrete','concrete-cast'],text:'仅比较生产与处置；其他阶段和未建模材料不计为零。材料替换后按候选密度重新算质量。强度、耐久、施工、当地供应、价格均需核实。缺项时不能宣称完整方案减排。'}
+  {id:'kbob-materials-v9',title:'KBOB 已接入材料条目',kind:'数据库条目',tags:['concrete','concrete-cast','concrete-precast','timber-solid','timber-glulam','timber-clt','masonry-clay','masonry-concrete','masonry-aac','glass','aluminium','steel-section','steel-tube','steel-plate','gypsum','stone-natural-polished'],url:C.factorSource.url,text:'应用只使用已接入并逐项记录来源单元格的 KBOB 材料因子做生产与处置初筛。跨材料比较沿用当前几何或已知净量，不证明功能、强度、耐久、防火、施工或供应等效。'},
+  {id:'limits-v1',title:'比较边界与待验证事项',kind:'项目计算规则，非工程规范',tags:['concrete','concrete-cast','concrete-precast','timber-solid','timber-glulam','timber-clt','masonry-clay','masonry-concrete','masonry-aac','glass','aluminium','steel-section','steel-tube','steel-plate','gypsum','stone-natural-polished'],text:'仅比较生产与处置；其他阶段和未建模材料不计为零。材料替换后按候选密度重新算质量。强度、耐久、防火、连接、施工、当地供应、价格均需核实。缺项时不能宣称完整方案减排。'}
  ];
  function eligible(elements){return elements.filter(e=>['concrete','concrete-cast'].includes(e.material)&&!e.factorId&&!C.element(e).error).sort((a,b)=>C.element(b).value-C.element(a).value);}
  function retrieve(elements,query=''){const tags=new Set(elements.map(e=>e.material));return documents.filter(d=>d.tags.some(t=>tags.has(t))).map(d=>({...d,score:d.tags.filter(t=>tags.has(t)).length+(query.includes('配方')&&d.id.includes('concrete')?1:0)})).sort((a,b)=>b.score-a.score);}

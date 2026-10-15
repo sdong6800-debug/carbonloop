@@ -2,8 +2,12 @@
  'use strict';
  const C=window.ModelCore,D=window.CarbonChange,$=id=>document.getElementById(id),fmt=(v,d=2)=>v===null||v===undefined?'—':v.toLocaleString('zh-CN',{maximumFractionDigits:d});
  const fmtVolume=v=>v===null||v===undefined?'—':v>0&&v<.001?v.toLocaleString('zh-CN',{maximumFractionDigits:6}):fmt(v,3);
- const quantityText=e=>e.area!==null&&e.area!==undefined?`${fmt(e.area,3)} m² · 15 mm 参考`:`${fmtVolume(e.volume)} m³`;
- const NS='http://www.w3.org/2000/svg';let A=null,B=null,active='A',selected='S01',step=1,reviewed=null,direction='slab',entryRecord=null,reportShowAll=false;
+ const quantityText=e=>{
+  if(e.area===null||e.area===undefined)return `${fmtVolume(e.volume)} m³`;
+  const thickness=(Number.isFinite(e.finishThickness)&&e.finishThickness>0?e.finishThickness:e.factor?.sourceThickness)*1000;
+  return `${fmt(e.area,3)} m² · ${fmt(thickness,1)} mm 候选厚度`;
+ };
+ const NS='http://www.w3.org/2000/svg';let A=null,B=null,active='A',selected='S01',step=1,reviewed=null,direction='slab',entryRecord=null,reportShowAll=false,savedCandidates=[];
  let candidateAudit=null,carbonExplanation=null,carbonExplainBusy=false,carbonAIReady=false,carbonHealthBusy=false,carbonExplainTimer=null;
  const current=()=>active==='A'?A:B;
  const label=id=>id==='A'?'当前模型':'改进草案';
@@ -22,10 +26,10 @@
  const saveCarbonAutoPreference=enabled=>{try{localStorage.setItem(CARBON_AUTO_KEY,enabled?'on':'off');}catch{}};
  $('reportExplainConsent').checked=carbonAutoPreference();
  const carbonSummary=()=>{const r=C.calculate(A||[]),groups=new Map();for(const line of r.lines){const key=line.material||'unknown',g=groups.get(key)||{material:C.materialInfo(key).name,count:0,known:0,value:0,production:0,disposal:0,status:new Set(),factorIds:new Set()};g.count++;if(line.error)g.status.add(line.error);else{g.known++;g.value+=line.value;g.production+=line.production;g.disposal+=line.disposal;g.factorIds.add(line.factor.id);}groups.set(key,g);}return {report:{total:r.value,production:r.production,disposal:r.disposal,known:r.known,count:r.total,scope:'KBOB 来源中的材料生产＋处置汇总列；非完整生命周期',source:C.factorSource.name},groups:[...groups.values()].map(g=>({...g,status:g.status.size?[...g.status].join('；'):'已计算',factorIds:[...g.factorIds],value:g.known?g.value:null,production:g.known?g.production:null,disposal:g.known?g.disposal:null}))};};
- function showCarbonExplanation(data,signature){carbonExplanation={...data,signature};$('reportExplainSummary').textContent=data.answer.summary;$('reportExplainCoverage').textContent=data.answer.coverage;for(const [id,values] of [['reportExplainDrivers',data.answer.drivers],['reportExplainLimits',data.answer.limitations],['reportExplainNext',data.answer.nextSteps]]){$(id).replaceChildren(...values.map(value=>{const li=document.createElement('li');li.textContent=value;return li;}));}$('reportExplanation').hidden=false;$('reportExplainStatus').textContent=`${data.provider} / ${data.model} · 已解释；数值仍来自程序。`;}
+function showCarbonExplanation(data,signature){carbonExplanation={...data,signature};$('reportExplainSummary').textContent=data.answer.summary;$('reportExplainCoverage').textContent=data.answer.coverage;for(const [id,values] of [['reportExplainDrivers',data.answer.drivers],['reportExplainLimits',data.answer.limitations],['reportExplainNext',data.answer.nextSteps]]){$(id).replaceChildren(...values.map(value=>{const li=document.createElement('li');li.textContent=value;return li;}));}$('reportExplanation').hidden=false;$('reportExplainStatus').textContent=`${data.provider} / ${data.model} · 已解释${data.attempts>1?'（已自动修复返回格式）':''}；数值仍来自程序。`;}
  function scheduleCarbonExplanation(){clearTimeout(carbonExplainTimer);if(!A||step!==1||!carbonAIReady||!$('reportExplainConsent').checked||carbonExplainBusy)return;const signature=JSON.stringify(carbonSummary());if(carbonExplanation?.signature===signature)return;$('reportExplainStatus').textContent='碳结果已生成，AI 将自动解释…';carbonExplainTimer=setTimeout(()=>explainCarbon(),800);}
- async function checkCarbonAI(){if(carbonHealthBusy)return carbonAIReady;carbonHealthBusy=true;try{const response=await fetch('http://127.0.0.1:8514/health',{signal:AbortSignal.timeout(4000),cache:'no-store'});if(!response.ok)throw Error();const health=await response.json();carbonAIReady=health.configured===true&&health.carbonExplanationVersion>=1;$('reportExplainStatus').textContent=carbonAIReady?'AI 已连接；结果生成后自动解释。':'本地 AI 服务已启动，但还没有有效的 API 配置。';}catch{carbonAIReady=false;$('reportExplainStatus').textContent='本地 AI 连接未启动。请启用 CarbonLoop DeepSeek 连接，返回本页后会自动重试。';}finally{carbonHealthBusy=false;$('reportExplain').disabled=!carbonAIReady||carbonExplainBusy||!$('reportExplainConsent').checked;}if(carbonAIReady)scheduleCarbonExplanation();return carbonAIReady;}
- async function explainCarbon(){if(carbonExplainBusy||!$('reportExplainConsent').checked||!A)return;if(!carbonAIReady&&!(await checkCarbonAI()))return;carbonExplainBusy=true;$('reportExplain').disabled=true;$('reportExplainStatus').textContent='正在发送结果摘要并生成解释…';const summary=carbonSummary(),signature=JSON.stringify(summary);try{const response=await fetch('http://127.0.0.1:8514/carbon-explain',{method:'POST',signal:AbortSignal.timeout(50000),headers:{'Content-Type':'application/json','X-CarbonLoop':'1'},body:JSON.stringify(summary)}),data=await response.json();if(!response.ok)throw Error(data.error||'AI 解释失败');if(signature!==JSON.stringify(carbonSummary()))throw Error('结果已变化，请重新解释。');showCarbonExplanation(data,signature);}catch(error){if(error.name==='TimeoutError')$('reportExplainStatus').textContent='AI 响应超时，请重试。';else if(error instanceof TypeError||/failed to fetch/i.test(error.message)){carbonAIReady=false;$('reportExplainStatus').textContent='本地 AI 连接已断开。请重新启用 CarbonLoop DeepSeek 连接。';}else $('reportExplainStatus').textContent=error.message;}finally{carbonExplainBusy=false;$('reportExplain').disabled=!carbonAIReady||!$('reportExplainConsent').checked;}}
+async function checkCarbonAI(){if(carbonHealthBusy)return carbonAIReady;carbonHealthBusy=true;try{const response=await fetch('http://127.0.0.1:8514/health',{signal:AbortSignal.timeout(4000),cache:'no-store'});if(!response.ok)throw Error();const health=await response.json();carbonAIReady=health.configured===true&&health.carbonExplanationVersion>=2;$('reportExplainStatus').textContent=carbonAIReady?'AI 已连接；结果生成后自动解释。':health.configured?'AI 连接程序需要重新加载本次更新。':'本地 AI 服务已启动，但还没有有效的 API 配置。';}catch{carbonAIReady=false;$('reportExplainStatus').textContent='本地 AI 连接未启动。请启用 CarbonLoop DeepSeek 连接，返回本页后会自动重试。';}finally{carbonHealthBusy=false;$('reportExplain').disabled=!carbonAIReady||carbonExplainBusy||!$('reportExplainConsent').checked;}if(carbonAIReady)scheduleCarbonExplanation();return carbonAIReady;}
+async function explainCarbon(){if(carbonExplainBusy||!$('reportExplainConsent').checked||!A)return;if(!carbonAIReady&&!(await checkCarbonAI()))return;carbonExplainBusy=true;$('reportExplain').disabled=true;$('reportExplainStatus').textContent='正在发送结果摘要并生成解释…';const summary=carbonSummary(),signature=JSON.stringify(summary);try{const response=await fetch('http://127.0.0.1:8514/carbon-explain',{method:'POST',signal:AbortSignal.timeout(80000),headers:{'Content-Type':'application/json','X-CarbonLoop':'1'},body:JSON.stringify(summary)}),data=await response.json();if(!response.ok)throw Error(data.error||'AI 解释失败');if(signature!==JSON.stringify(carbonSummary()))throw Error('结果已变化，请重新解释。');showCarbonExplanation(data,signature);}catch(error){if(error.name==='TimeoutError')$('reportExplainStatus').textContent='AI 两次响应均超时；碳计算结果仍然有效，请稍后重试。';else if(error instanceof TypeError||/failed to fetch/i.test(error.message)){carbonAIReady=false;$('reportExplainStatus').textContent='本地 AI 连接已断开。请重新启用 CarbonLoop DeepSeek 连接。';}else $('reportExplainStatus').textContent=error.message;}finally{carbonExplainBusy=false;$('reportExplain').disabled=!carbonAIReady||!$('reportExplainConsent').checked;}}
  $('reportExplainConsent').addEventListener('change',()=>{clearTimeout(carbonExplainTimer);saveCarbonAutoPreference($('reportExplainConsent').checked);$('reportExplain').disabled=carbonExplainBusy||!carbonAIReady||!$('reportExplainConsent').checked;if($('reportExplainConsent').checked)checkCarbonAI();else $('reportExplainStatus').textContent='AI 自动解释已关闭。';});$('reportExplain').addEventListener('click',explainCarbon);window.addEventListener('focus',()=>{if(step===1)checkCarbonAI();});checkCarbonAI();
  const materialConfirmed=e=>{const record=entryRecord?.records?.find(r=>r.id===e.id);return !!record?.materialConfirmed&&record.material===e.material&&e.material!=='unknown';};
  function resultReport(r){
@@ -71,7 +75,7 @@
  function workflow(){
   if(!A)return;
   $('app').dataset.step=step;
-  const guide={1:['01 / 查看结果','初步碳分析结果','先看当前模型的排放、阶段覆盖和构件明细；核验记录已经保留，不需要再确认一遍。','探索改进 →'],2:['02 / 选择改动','从一个明确的改动开始','创建一次草案，模型和已填结构条件一起继承。不需要分别复制；未知信息不会被自动补成已知。',B?'继续编辑候选 →':''],3:['03 / 调整并看变化','改尺寸，看碳排增减',`选择楼板、柱或墙，拖动或输入尺寸；右侧立即对比修改前后。范围是本次选中的 ${A.length} 个构件，不是整栋建筑。`,'查看汇总与保留 →'],4:['04 / 对比与保留','看清变化，也看清尚未验证的部分','这里展示同一版草案的碳排、结构输入与待办。可以下载留给老师讨论，不能把减排数字当作安全结论。','下载待验证草案 ↓']}[step];
+  const guide={1:['01 / 查看结果','初步碳分析结果','先看当前模型的排放、阶段覆盖和构件明细；核验记录已经保留，不需要再确认一遍。','探索改进 →'],2:['02 / 选择改动','从一个明确的改动开始','创建一次草案，模型和已填结构条件一起继承。不需要分别复制；未知信息不会被自动补成已知。',B?'继续编辑候选 →':''],3:['03 / 调整并看变化','建立候选，看碳排增减',`上方可以把多个 AI／程序方案加入候选集；下方可以手动调整构件。范围是本次选中的 ${A.length} 个构件，不是整栋建筑。`,'比较全部候选 →'],4:['04 / 多方案比较','让全部候选进入同一张决策表','这里并列展示 AI／程序候选与手动草案，再由 AI 总结取舍和优先核实方向；推荐不等于结构批准。','保留全部候选并下载 ↓']}[step];
   ['flowKicker','flowTitle','flowDescription','flowNext'].forEach((id,i)=>$(id).textContent=guide[i]);
   $('flowNext').hidden=!guide[3];$('flowBack').hidden=step===1;
   structureAction.hidden=step===2||step===4;
@@ -126,8 +130,8 @@
   $('dimensionLabel').textContent=control.kind?control.label+' · mm':'当前构件尺寸暂不可调';
   for(const key of ['min','max','step'])$('dimension')[key]=control[key]||1;
   $('dimension').value=control.value||1;$('dimension').disabled=active==='A'||!control.kind;
-  $('dimensionValue').textContent=control.kind?`修改前 ${fmt(baseControl.value)} → 修改后 ${fmt(control.value)} mm`:'保持原模型净量';
-  $('editHint').textContent=active==='A'?'当前模型保持不变；进入探索改进后再试调。':'拖动或输入尺寸，右侧立即重算。输入范围仅用于演示，不是规范允许范围。';
+  $('dimensionValue').textContent=control.kind?`修改前 ${fmt(baseControl.value)} → 修改后 ${fmt(control.value)} mm`:control.reason;
+  $('editHint').textContent=active==='A'?'当前模型保持不变；进入探索改进后再试调。':control.kind?'拖动或输入尺寸，右侧立即重算。输入范围仅用于演示，不是规范允许范围。':`${control.reason} 请在“修改哪个构件”中选择标注了厚度或截面的构件。`;
   $('elementCarbon').textContent=fmt(r.value);
   $('selectedResultName').textContent=e.name+' · 当前选中构件';
   $('formula').replaceChildren();
@@ -137,14 +141,14 @@
  function comparison(){
   $('comparisonBody').replaceChildren();$('export').disabled=!A;
   const live=B?C.compare(A,B):null;
-  $('liveDelta').textContent=!live?'当前模型的结果作为后续改进对比依据':live.compatible?`改进 − 当前：${live.delta>0?'+':''}${fmt(live.delta)} kg CO₂e${live.percent===null?'':` / ${fmt(live.percent)}%`} · 未验证结构`:'计算资料不完整 · 暂停比较';
+  $('liveDelta').textContent=!live?'当前模型的结果作为后续改进对比依据':live.compatible?`改进 − 当前：${live.delta>0?'+':''}${fmt(live.delta)} kg CO₂e${live.percent===null?'':` / ${fmt(live.percent)}%`} · ${live.partial?`已知部分 ${live.known}/${live.total}`:'完整计算范围'} · 未验证结构`:'两方案可计算范围不一致 · 暂停比较';
   if(!B){$('comparisonBody').innerHTML='<p class="help">尚未创建候选草案。</p>';return;}
   const r=C.compare(A,B),wrap=document.createElement('div');wrap.className='tablewrap';
   const t=document.createElement('table');t.innerHTML='<thead><tr><th>相同碳计算范围</th><th>当前模型</th><th>改进草案</th></tr></thead>';
   const body=document.createElement('tbody');
   [['已映射构件',`${r.A.known}/${r.A.total}`,`${r.B.known}/${r.B.total}`],['已计入体积 m³',fmt(r.A.lines.filter(e=>!e.error).reduce((s,e)=>s+e.volume,0),3),fmt(r.B.lines.filter(e=>!e.error).reduce((s,e)=>s+e.volume,0),3)],['已计入部分 kg CO₂e',fmt(r.A.value),fmt(r.B.value)]].forEach(vals=>{const tr=document.createElement('tr');vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});body.append(tr);});t.append(body);wrap.append(t);$('comparisonBody').append(wrap);
   const diff=document.createElement('p');diff.className=r.compatible?'diff':'warning';diff.id='delta';
-  diff.textContent=r.compatible?`改进 − 当前：${r.delta>0?'+':''}${fmt(r.delta)} kg CO₂e${r.percent===null?'':`（${r.percent>0?'+':''}${fmt(r.percent)}%）`} · 仅数值差，非可实施减排结论`:'方案存在未确认材料或无效几何，计算范围不完整，暂停差值和百分比比较。';$('comparisonBody').append(diff);
+  diff.textContent=r.compatible?`改进 − 当前：${r.delta>0?'+':''}${fmt(r.delta)} kg CO₂e${r.percent===null?'':`（${r.percent>0?'+':''}${fmt(r.percent)}%）`} · ${r.partial?`仅比较两方案共同可计算的 ${r.known}/${r.total} 个构件；其余 ${r.missing} 个未计入，不是整栋总量`:'完整计算范围'} · 非可实施减排结论`:'两方案中可计算的构件不是同一批，暂停差值和百分比比较，避免把缺项当作零。';$('comparisonBody').append(diff);
   const changes=document.createElement('ul');changes.id='changes';
   B.forEach(e=>{const parts=D.differences(A.find(a=>a.id===e.id),e);if(parts.length){const li=document.createElement('li');li.textContent=e.name+'：'+parts.join('；');changes.append(li);}});
   if(!changes.children.length){const li=document.createElement('li');li.textContent='几何和材料尚未改变，不存在几何调整带来的减排。返回“调整并看变化”修改。';changes.append(li);}$('comparisonBody').append(changes);
@@ -167,7 +171,7 @@
   });comparison();S.sync({active,elements:C.clone(current())});workflow();resultReport(r);document.dispatchEvent(new Event('carbon-model-render'));
  }
  function enterModel(elements,record){
-  A=elements;entryRecord=record;B=null;candidateAudit=null;reviewed=null;active='A';step=1;selected=A[0].id;reportShowAll=false;
+   A=elements;entryRecord=record;B=null;candidateAudit=null;savedCandidates=[];reviewed=null;active='A';step=1;selected=A[0].id;reportShowAll=false;
   $('app').hidden=false;$('welcome').hidden=true;$('start').hidden=true;$('tabB').disabled=true;
   $('sourceLabel').textContent=`${record.rhino_connected?'Rhino 实际导入':'内置示例'} · ${record.scope_label||'选中范围'} · ${A.length} / ${record.source_count} 个对象 · 单位 m`;
   document.querySelector('.project-bar b').textContent=`本次分析 / ${record.scope_label||'选中范围'}`;
@@ -179,7 +183,7 @@
   facts[4].textContent=`所选楼板面积之和 ${fmt(A.filter(e=>e.type==='slab').reduce((sum,e)=>sum+e.l*e.w,0))} m²；非整栋建筑面积`;
   $('model').setAttribute('aria-label','本次范围内构件的轴测示意');
   const radios=[...document.querySelectorAll('[name="direction"]')];
-  radios.forEach(r=>{r.disabled=!A.some(e=>e.type===r.value&&D.control(e).kind);r.checked=false;});
+  radios.forEach(r=>{r.disabled=r.value==='workspace'?!A.length:!A.some(e=>e.type===r.value&&D.control(e).kind);r.checked=false;});
   const first=radios.find(r=>!r.disabled);if(first)first.checked=true;$('copy').disabled=!first;
   modelDetails.open=false;render();$('carbonReportTitle').focus();$('carbonReportTitle').scrollIntoView({block:'start'});
  }
@@ -189,7 +193,7 @@
  }
   $('load').addEventListener('click',()=>openEntry());$('recheckModel').addEventListener('click',()=>openEntry());
   document.addEventListener('carbon-rhino-intake-ready',()=>{if($('modelEntry').hidden)openEntry(true);});
- $('copy').addEventListener('click',()=>{const option=document.querySelector('[name="direction"]:checked');if(!option||option.disabled||B||!S.createCandidate())return;B=C.clone(A);direction=option.value;selected=B.find(e=>e.type===direction&&D.control(e).kind).id;$('tabB').disabled=false;go(3);});
+ $('copy').addEventListener('click',()=>{const option=document.querySelector('[name="direction"]:checked');if(!option||option.disabled||B||!S.createCandidate())return;B=C.clone(A);direction=option.value;selected=B.some(e=>e.id===selected)?selected:B[0].id;$('tabB').disabled=false;go(3);});
  ['A','B'].forEach(s=>$('tab'+s).addEventListener('click',()=>{active=s;step=s==='A'?1:3;render();}));
  document.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.step))));
  $('flowBack').addEventListener('click',()=>go(step===3?1:step-1));
@@ -203,14 +207,14 @@
  document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>$(button.dataset.open).showModal()));
  document.querySelectorAll('.close-dialog').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
  $('heat').addEventListener('change',model);
- $('material').addEventListener('change',()=>{if(active!=='B')return;const e=B.find(e=>e.id===selected);e.material=$('material').value;delete e.factorId;render();});
+ $('material').addEventListener('change',()=>{if(active!=='B')return;const i=B.findIndex(e=>e.id===selected);try{B[i]=D.changeMaterial(B[i],$('material').value);}catch(error){$('material').value=B[i].material;const out=document.getElementById('changeInputError');if(out)out.textContent=error.message;}render();});
  function resizeSelected(mm){if(active!=='B')return;const i=B.findIndex(e=>e.id===selected);B[i]=D.resize(B[i],mm);render();}
  $('dimension').addEventListener('input',()=>resizeSelected(Number($('dimension').value)));
  function downloadDraft(){
-  const payload={schema:'carbonloop-model-demo-v1',exported_at:new Date().toISOString(),origin:entryRecord?.rhino_connected?'Rhino 8 插件导入；分类与材料经网页核对':'内置长方体示例；未连接 Rhino / Revit',geometry_unit:'m',output_unit:'kg CO2e',source:C.factorSource,factors:C.factors,scope:'仅各材料生产与处置；钢筋、运输、施工、更换、运营等未计入；不验证结构安全',A:{elements:A,result:C.calculate(A)},B:B?{elements:B,result:C.calculate(B)}:null,comparison:B?C.compare(A,B):null};
+   const payload={schema:'carbonloop-model-demo-v1',exported_at:new Date().toISOString(),origin:entryRecord?.rhino_connected?'Rhino 8 插件导入；分类与材料经网页核对':'内置长方体示例；未连接 Rhino / Revit',geometry_unit:'m',output_unit:'kg CO2e',source:C.factorSource,factors:C.factors,scope:'仅各材料生产与处置；钢筋、运输、施工、更换、运营等未计入；不验证结构安全',A:{elements:A,result:C.calculate(A)},B:B?{elements:B,result:C.calculate(B)}:null,comparison:B?C.compare(A,B):null,alternatives:savedCandidates.map(item=>({...C.clone(item),result:C.calculate(item.elements),comparison:C.compare(A,item.elements)}))};
   payload.active_structural_preparation=window.StructurePreparation.exportState();
   payload.structural_change_review=window.StructuralReviewUI?.exportState()||null;
-  payload.workflow={status:'待验证草案',candidate_origin:'人工调整，非 AI 生成',direction,review_current:reviewed!==null&&reviewed===snapshot(),structural_safety:'未执行，不可判定',conditions_changed:B?S.differences():[],next_action:'补齐并核实工程输入，接入结构求解及规范校核，再由专业人员复核'};
+  payload.workflow={status:'多方案待验证集合',candidate_origin:`${savedCandidates.length} 个程序／AI 候选；${B&&JSON.stringify(B)!==JSON.stringify(A)?'包含':'不包含'}手动改动方案`,direction,review_current:reviewed!==null&&reviewed===snapshot(),structural_safety:'未执行，不可判定',conditions_changed:B?S.differences():[],next_action:'根据多方案比较与 AI 取舍总结选择优先核实方向；补齐工程输入后再由专业人员复核'};
   payload.structural_preparation={A:S.exportState('A',A),B:B?S.exportState('B',B):null};
   payload.model_intake={A:S.intake('A',A),B:B?S.intake('B',B):null};
   payload.model_entry=entryRecord;
@@ -226,7 +230,14 @@
  window.CarbonWorkspace={applySolution:(options,id,audit,signature)=>{
   if(!B||JSON.stringify(B)!==signature)throw Error('模型已变化，请重新寻找方案。');
   const proposal=window.CarbonSolutions.apply(B,options,id);B=C.clone(proposal.elements);candidateAudit={...C.clone(audit),candidateId:id,options:C.clone(options),canAdopt:false,createdSnapshot:JSON.stringify(B)};selected=proposal.affected[0];reviewed=null;go(3);
- },state:()=>({baseline:A,candidate:B,active,selected,step}),select:id=>{if(current()?.some(e=>e.id===id)){selected=id;render();}},resize:resizeSelected,resetSelected:()=>{if(active!=='B')return;B[B.findIndex(e=>e.id===selected)]=C.clone(A.find(e=>e.id===selected));render();},recipe:id=>{if(active!=='B'||!['','01.002.13'].includes(id))return;const e=B.find(e=>e.id===selected);if(!['concrete','concrete-cast'].includes(e.material))return;if(id)e.factorId=id;else delete e.factorId;render();},researchModel:()=>A?C.clone(B||A):null,applySuggestion:(choice,audit,modelSignature)=>{
+ },saveSolution:(options,id,audit,signature)=>{
+  if(!A||JSON.stringify(A)!==signature)throw Error('原模型已变化，请重新寻找方案。');
+  const proposal=window.CarbonSolutions.apply(A,options,id),item={id:'generated:'+id,candidateId:id,title:audit?.candidate?.title||id,origin:audit?.mode==='live_ai'&&audit?.answer?.preferredId===id?'AI 建议优先核实':'程序生成候选',elements:C.clone(proposal.elements),audit:{...C.clone(audit),candidateId:id,options:C.clone(options),canAdopt:false},createdAt:new Date().toISOString()};
+  const index=savedCandidates.findIndex(candidate=>candidate.id===item.id);if(index>=0)savedCandidates[index]=item;else savedCandidates.push(item);document.dispatchEvent(new Event('carbon-alternatives-change'));return C.clone(item);
+ },saveSolutions:(options,candidates,audit,signature)=>{
+  if(!A||JSON.stringify(A)!==signature)throw Error('原模型已变化，请重新寻找方案。');
+  savedCandidates=candidates.map(candidate=>{const proposal=window.CarbonSolutions.apply(A,options,candidate.id);return {id:'generated:'+candidate.id,candidateId:candidate.id,title:candidate.title||candidate.id,origin:audit?.mode==='live_ai'&&audit?.answer?.preferredId===candidate.id?'AI 建议优先核实':'程序生成候选',elements:C.clone(proposal.elements),audit:{...C.clone(audit),candidate:C.clone(candidate),candidateId:candidate.id,options:C.clone(options),canAdopt:false},createdAt:new Date().toISOString()};});document.dispatchEvent(new Event('carbon-alternatives-change'));return C.clone(savedCandidates);
+ },removeSolution:id=>{savedCandidates=savedCandidates.filter(item=>item.id!==id);document.dispatchEvent(new Event('carbon-alternatives-change'));},state:()=>({baseline:A,candidate:B,alternatives:C.clone(savedCandidates),active,selected,step}),select:id=>{if(current()?.some(e=>e.id===id)){selected=id;render();}},resize:resizeSelected,resetSelected:()=>{if(active!=='B')return;B[B.findIndex(e=>e.id===selected)]=C.clone(A.find(e=>e.id===selected));render();},recipe:id=>{if(active!=='B'||!['','01.002.13'].includes(id))return;const e=B.find(e=>e.id===selected);if(!['concrete','concrete-cast'].includes(e.material))return;if(id)e.factorId=id;else delete e.factorId;render();},researchModel:()=>A?C.clone(B||A):null,applySuggestion:(choice,audit,modelSignature)=>{
   if(!B||JSON.stringify(B)!==modelSignature)throw Error('模型已变化，请重新生成建议。');
   const result=window.CarbonAI.apply(B,choice);B=result.elements;candidateAudit={...C.clone(audit),createdSnapshot:JSON.stringify(B)};selected=choice.elementId;go(3);
  },baseline:()=>A?C.clone(A):null,hasCandidate:()=>!!B,createCandidate:(choice,audit,baselineSignature)=>{

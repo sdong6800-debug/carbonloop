@@ -36,9 +36,11 @@ const testUrl=process.env.CARBONLOOP_TEST_URL||'http://127.0.0.1:8513/demo.html'
   await page.screenshot({path:'.test-exports/current-rhino-fixed.png',fullPage:true});
   await page.click('.component-disclosure>summary');
   const stoneRow=page.locator('#reportComponents tr').filter({hasText:'抛光天然石材'}).first();
-  assert.match((await stoneRow.textContent()).replace(/\s+/g,' '),/m² · 15 mm 参考/);
+  assert.match((await stoneRow.textContent()).replace(/\s+/g,' '),/m² · 15 mm (?:参考|候选厚度)/);
   assert.notEqual((await page.textContent('#total')).trim(),'242.4');
-  console.log(JSON.stringify({connected,recognition,button,detailAllButton,groupButton,coverage,total:(await page.textContent('#total')).trim(),stage},null,2));
-  console.log('PASS current Rhino intake defaults to all recognized objects, labels ext.Finish as floor finish, and uses the 15 mm area basis.');
+  await page.click('#reportExplore');await page.click('#solutionFind');await page.waitForFunction(()=>!document.getElementById('solutionFind').disabled);
+  const solutionCount=await page.locator('.solution-card').count(),solutionTitles=await page.locator('.solution-card h3').allTextContents();assert(solutionCount>0);assert(solutionTitles.some(title=>title.includes('抛光天然石材')&&title.includes('实木')));
+  console.log(JSON.stringify({connected,recognition,button,detailAllButton,groupButton,coverage,total:(await page.textContent('#total')).trim(),stage,solutionCount,solutionTitles},null,2));
+  console.log('PASS current Rhino intake defaults to all recognized objects, labels ext.Finish as floor finish, uses the 15 mm area basis, and generates bounded material research candidates.');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

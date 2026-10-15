@@ -24,7 +24,7 @@
  const componentFold=fold(document.querySelector('.report-components'),'查看构件明细与数据来源','report-disclosure component-disclosure');
  const exploreNotes=document.createElement('details');exploreNotes.className='explore-notes';exploreNotes.innerHTML='<summary>查看试算范围与限制</summary>';$('copy').before(exploreNotes);exploreNotes.append(...document.querySelectorAll('#explore>.help,#explore>.inherited-note'));
  document.querySelector('#explore>h2').textContent='你想改什么？';
- document.querySelector('#explore>h3').textContent='改尺寸';
+ const legacyExploreHeading=document.querySelector('#explore>h3');if(legacyExploreHeading)legacyExploreHeading.textContent='改尺寸';
  document.querySelector('.change-ai>summary').textContent='换材料 · 建议助手';
  document.querySelector('.change-quantity>summary').textContent='构件资料';
  materialDetails.querySelector('summary').textContent='更换材料';
@@ -46,8 +46,9 @@
  function sync(){const state=W.state();if(!state.baseline)return;const list=state.active==='A'?state.baseline:state.candidate,e=list?.find(x=>x.id===state.selected);if(!e)return;const base=state.baseline.find(x=>x.id===e.id),c=D.control(e);
   const guide={2:['寻找减碳方案','从当前模型出发寻找一个可比较的改进方向。'],3:['寻找减碳方案','修改构件或材料，碳排与结构提示同步更新。'],4:['对比并保留方案','确认变化、风险和待办，再导出报告。']}[state.step];if(guide){$('flowTitle').textContent=guide[0];$('flowDescription').textContent=guide[1];}
   if(state.step===3)$('flowNext').textContent='对比并保留 →';if(state.step===4)$('flowNext').textContent='下载 Excel 报告 ↓';
-  const options=list.map(x=>{const ctl=D.control(x);return [x.id,`${x.floor||''} ${x.name} ${x.id} · ${ctl.kind?ctl.label:'尺寸暂不可调'}`];});$('changeElement').replaceChildren(...options.map(([value,text])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;return opt;}));$('changeElement').value=e.id;
-  $('changeAvailability').textContent=c.reason;$('dimensionInput').disabled=state.active!=='B'||!c.kind;for(const k of ['min','max','step'])$('dimensionInput')[k]=c[k]||'';$('dimensionInput').value=c.kind?Number(c.value.toFixed(3)):'';$('resetElement').disabled=state.active!=='B'||!D.differences(base,e).length;
+  const options=list.map(x=>{const ctl=D.control(x),policy=D.policy(x);return [x.id,`${x.floor||''} ${x.name} ${x.id} · ${ctl.kind?ctl.label:'可改材料；尺寸回 Rhino'}`,policy.materialEditable];});$('changeElement').replaceChildren(...options.map(([value,text,materialEditable])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;opt.dataset.materialEditable=String(materialEditable);return opt;}));$('changeElement').value=e.id;
+  const policy=D.policy(e);$('changeAvailability').textContent=(c.kind?c.reason:c.reason)+' '+policy.materialReason;$('dimensionInput').disabled=state.active!=='B'||!c.kind;for(const k of ['min','max','step'])$('dimensionInput')[k]=c[k]||'';$('dimensionInput').value=c.kind?Number(c.value.toFixed(3)):'';$('resetElement').disabled=state.active!=='B'||!D.differences(base,e).length;
+  $('material').disabled=state.active!=='B'||!policy.materialEditable;
   $('changeRecipe').disabled=state.active!=='B'||!['concrete','concrete-cast'].includes(e.material);$('changeRecipe').value=e.factorId||'';
   reviewFold.hidden=state.step!==4;
   parameterNotes.open=!c.kind;
@@ -67,7 +68,12 @@
   $('impactExplanation').textContent=old.error||next.error?'当前构件资料有缺项，先核对材料和净量，再比较。':!diffs.length?'拖动左侧参数，或展开材料选项；这里立即显示变化。':sameFactor?`材料因子未变；该构件用量由 ${fmt(old.volume,4)} 变为 ${fmt(next.volume,4)} m³，所以排放随用量变化。其他改动见下方清单。`:'材料配方或类别已改变；使用对应密度与因子重新计算，不能仅凭碳更低判断材料可以替代。';
  }
  $('changeElement').addEventListener('change',()=>{W.select($('changeElement').value);$('changeInputError').textContent='';});
- $('dimensionInput').addEventListener('change',()=>{try{W.resize(Number($('dimensionInput').value));$('changeInputError').textContent='';}catch(e){$('changeInputError').textContent=e.message;sync();}});
+ $('dimensionInput').addEventListener('input',()=>{
+  const value=Number($('dimensionInput').value),control=D.control(W.state().candidate?.find(x=>x.id===W.state().selected)||{});
+  if(!Number.isFinite(value)||!control.kind||value<control.min||value>control.max)return;
+  try{W.resize(value);$('changeInputError').textContent='';}catch(e){$('changeInputError').textContent=e.message;sync();}
+ });
+ $('dimensionInput').addEventListener('change',()=>{const value=Number($('dimensionInput').value),control=D.control(W.state().candidate?.find(x=>x.id===W.state().selected)||{});if(!Number.isFinite(value)||!control.kind||value<control.min||value>control.max){$('changeInputError').textContent=`请输入 ${control.min}–${control.max} mm。`;sync();}});
  $('resetElement').addEventListener('click',()=>{W.resetSelected();$('changeInputError').textContent='';});
  $('changeRecipe').addEventListener('change',()=>W.recipe($('changeRecipe').value));
  document.addEventListener('carbon-model-render',sync);sync();
