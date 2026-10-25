@@ -122,6 +122,10 @@ public sealed class CarbonLoopPlugin : PlugIn
     public void RememberSyncScope(RhinoDoc doc, string mode, string? floor, IReadOnlyList<RhinoObject> objects) =>
         _sync?.Remember(doc, mode, floor, objects);
 
+    public IDisposable SuspendSynchronizationForReview() => _sync?.PauseForReview() ?? new EmptyDisposable();
+
+    private sealed class EmptyDisposable : IDisposable { public void Dispose() { } }
+
     public bool OpenWorkbench(out string message, int? revision = null)
     {
         if (!EnsureHost(out message))
@@ -135,7 +139,7 @@ public sealed class CarbonLoopPlugin : PlugIn
             // file, while the browser treats it as a new document navigation.
             var navigationToken = revision?.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var url = $"{LocalWebHost.WorkbenchUrl}?source=rhino&revision={navigationToken}&ui=20261015-single-host-1";
+            var url = $"{LocalWebHost.WorkbenchUrl}?source=rhino&revision={navigationToken}&ui=20261020-rhino-review-1";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             message = "CarbonLoop 工作台已打开。";
             return true;

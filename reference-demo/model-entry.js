@@ -58,6 +58,11 @@
  function saveLearned(){try{localStorage.setItem('carbonloop.rhino.semantic-mappings.v2',JSON.stringify(learnedMappings));}catch(_){}}
  function prepareRow(e){
   const row={...e,...M.match(e.materialRecord),sourceType:e.type,typeConfirmed:false,materialConfirmed:false,typeEdited:false,materialEdited:false};
+  if(row.classificationSource==='rhino_user_confirmed'){
+   row.typeConfirmed=row.typeInference?.source==='CarbonLoop.Type'&&row.type!=='unknown';
+   row.materialConfirmed=row.material!=='unknown';
+   return row;
+  }
   const learned=learnedMappings[sourceKey(row)];
   if(learned?.type&&types[learned.type]&&!['CarbonLoop.Type','web-semantic-guard'].includes(row.typeInference?.source)){row.type=learned.type;row.typeInference={source:'confirmed-project-mapping',confidence:1,basis:'采用你此前确认的“图层＋原始材料”项目映射。'};}
   if(learned?.material&&C.materials.some(m=>m.id===learned.material)){row.material=learned.material;row.matchBasis='采用你此前确认的“图层＋原始材料”项目映射；本次仍可修改。';}
@@ -67,8 +72,8 @@
   if(!previous)return next;
   const sameTypeSource=previous.sourceType===next.sourceType&&previous.layer===next.layer&&previous.type===next.type;
   const sameMaterialSource=sourceKey(previous)===sourceKey(next)&&previous.material===next.material;
-  if(sameTypeSource){next.typeConfirmed=!!previous.typeConfirmed;next.typeEdited=!!previous.typeEdited;}
-  if(sameMaterialSource){next.materialConfirmed=!!previous.materialConfirmed;next.materialEdited=!!previous.materialEdited;}
+  if(sameTypeSource&&!next.typeConfirmed){next.typeConfirmed=!!previous.typeConfirmed;next.typeEdited=!!previous.typeEdited;}
+  if(sameMaterialSource&&!next.materialConfirmed){next.materialConfirmed=!!previous.materialConfirmed;next.materialEdited=!!previous.materialEdited;}
   return next;
  }
  const visible=()=>rows.filter(r=>group==='all'||(group==='pending'?!confirmed(r):group==='issues'?uncertain(r):group.startsWith('match:')?matchKey(r)===group.slice(6):r.type===group));

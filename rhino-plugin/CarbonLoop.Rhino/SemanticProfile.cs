@@ -19,6 +19,113 @@ internal sealed class SemanticProfile
 
     public string Version { get; }
 
+    public IReadOnlyList<string> TypeCategories => _types.Keys.Append("unknown").Distinct().ToArray();
+    public IReadOnlyList<string> MaterialCategories => _materials.Keys.Append("unknown").Distinct().ToArray();
+
+    public bool IsType(string value) => value == "unknown" || _types.ContainsKey(value);
+    public bool IsMaterial(string value) => value == "unknown" || _materials.ContainsKey(value);
+
+    public static string Label(string category) => category switch
+    {
+        "slab" => "楼板", "beam" => "梁", "column" => "柱", "wall" => "墙",
+        "foundation" => "基础", "roof" => "屋面", "glazing" => "玻璃围护 / 窗",
+        "mullion" => "窗框 / 幕墙框", "door" => "门", "stair" => "楼梯", "finish" => "饰面",
+        "concrete" => "通用混凝土", "concrete-cast" => "现浇混凝土", "concrete-precast" => "预制混凝土",
+        "rebar" => "钢筋", "rebar-mesh" => "钢筋网", "steel-section" => "型钢", "steel-tube" => "钢管",
+        "steel-plate" => "钢板", "timber-solid" => "实木 / 锯材（需核对具体产品）", "timber-glulam" => "胶合木",
+        "timber-clt" => "CLT 交叉层压木", "masonry-clay" => "黏土砖", "masonry-concrete" => "混凝土砌块",
+        "masonry-aac" => "加气混凝土砌块", "glass" => "玻璃", "aluminium" => "铝",
+        "insulation" => "保温材料", "gypsum" => "石膏", "stone-natural-polished" => "抛光天然石材",
+        "unknown" => "未确定，发送后继续核验", _ => category
+    };
+
+    // Suggestions are never used by InferType/InferMaterial or the exporter until
+    // the architect accepts them. Scores are edit distances, not probabilities.
+    public SemanticSuggestion SuggestType(string name, string layer)
+    {
+        var leaf = layer.Split(new[] { "::" }, StringSplitOptions.None).LastOrDefault() ?? "";
+        return Suggest($"{name} {leaf}", _types);
+    }
+
+    public SemanticSuggestion SuggestMaterial(string name) => Suggest(name, _materials);
+
+    public SemanticSuggestion SuggestReviewMaterial(string name, string layer)
+    {
+        var native = SuggestMaterial(name);
+        // A layer hint may fill missing material information, but must never
+        // replace a recognized material or resolve an ambiguous native name.
+        if (native.Category != "unknown" || native.Ambiguous) return native;
+        var hint = SuggestMaterial(layer);
+        return hint with {
+            CorrectedText = hint.IsTypo && !hint.Ambiguous ? hint.Term : "",
+            Basis = "图层材料提示：" + hint.Basis
+        };
+    }
+
+    private static SemanticSuggestion Suggest(string value, Dictionary<string, string[]> groups)
+    {
+        var exact = groups.SelectMany(group => group.Value.Select(term => new Match(group.Key, term)))
+            .Where(item => Normalize(value).Contains(Normalize(item.Term), StringComparison.Ordinal)).ToArray();
+        var specific = exact.Select(item => item.Category).Distinct().ToList();
+        if (specific.Contains("timber-glulam") || specific.Contains("timber-clt")) specific.Remove("timber-solid");
+        if (specific.Contains("concrete-cast") || specific.Contains("concrete-precast") || specific.Contains("masonry-concrete")) specific.Remove("concrete");
+        if (specific.Contains("rebar-mesh")) specific.Remove("rebar");
+        if (specific.Count == 1)
+        {
+            var hit = exact.Where(item => item.Category == specific[0]).OrderByDescending(item => item.Term.Length).First();
+            return new SemanticSuggestion(hit.Category, hit.Term, "", "", false, false, $"词典匹配：{hit.Term}。");
+        }
+        if (specific.Count > 1)
+            return new SemanticSuggestion("unknown", "", "", "", false, true,
+                "名称命中多个类别：" + string.Join("、", specific.Select(Label)) + "；请手动选择。");
+
+        var tokens = Normalize(value).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
+        var candidates = new List<(string Category, string Original, string Term, int Distance)>();
+        foreach (var group in groups)
+        foreach (var term in group.Value)
+        {
+            var word = Normalize(term).Trim();
+            // Short abbreviations (e.g. CLT) and Chinese words are deliberately
+            // not autocorrected. One character can completely change their meaning.
+            if (!Regex.IsMatch(word, "^[a-z]{4,}$")) continue;
+            foreach (var token in tokens.Where(token => Regex.IsMatch(token, "^[a-z]{3,}$")))
+            {
+                var limit = word.Length >= 7 ? 2 : 1;
+                if (Math.Abs(word.Length - token.Length) > limit) continue;
+                var distance = EditDistance(token, word);
+                if (distance > 0 && distance <= limit) candidates.Add((group.Key, token, term, distance));
+            }
+        }
+        if (candidates.Count == 0)
+            return new SemanticSuggestion("unknown", "", "", "", false, false, "词典未匹配，请手动选择或保留未确定。");
+        var minimum = candidates.Min(item => item.Distance);
+        var best = candidates.Where(item => item.Distance == minimum).OrderBy(item => item.Term, StringComparer.Ordinal).ToArray();
+        var categories = best.Select(item => item.Category).Distinct().ToArray();
+        if (categories.Length != 1)
+            return new SemanticSuggestion("unknown", "", "", "", true, true,
+                "拼写有多个可能：" + string.Join("、", best.Select(item => item.Term).Distinct().Take(6)) + "；请手动选择。");
+        var suggestion = best[0];
+        return new SemanticSuggestion(suggestion.Category, suggestion.Term, suggestion.Original,
+            Regex.Replace(value, $"(?i)(?<![a-z]){Regex.Escape(suggestion.Original)}(?![a-z])", suggestion.Term),
+            true, false, $"拼写建议：{suggestion.Original} → {suggestion.Term}；必须由你确认。");
+    }
+
+    internal static int EditDistance(string first, string second)
+    {
+        var distances = new int[first.Length + 1, second.Length + 1];
+        for (var i = 0; i <= first.Length; i++) distances[i, 0] = i;
+        for (var j = 0; j <= second.Length; j++) distances[0, j] = j;
+        for (var i = 1; i <= first.Length; i++)
+        for (var j = 1; j <= second.Length; j++)
+        {
+            distances[i, j] = Math.Min(Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
+                distances[i - 1, j - 1] + (first[i - 1] == second[j - 1] ? 0 : 1));
+            if (i > 1 && j > 1 && first[i - 1] == second[j - 2] && first[i - 2] == second[j - 1])
+                distances[i, j] = Math.Min(distances[i, j], distances[i - 2, j - 2] + 1);
+        }
+        return distances[first.Length, second.Length];
+    }
+
     public static SemanticProfile Load(string pluginDirectory)
     {
         var path = Path.Combine(pluginDirectory, "rhino-semantic-profile.json");
@@ -118,3 +225,5 @@ internal sealed class SemanticProfile
 }
 
 internal sealed record Inference(string Value, string Source, double Confidence, string Basis);
+internal sealed record SemanticSuggestion(string Category, string Term, string OriginalWord, string CorrectedText,
+    bool IsTypo, bool Ambiguous, string Basis);

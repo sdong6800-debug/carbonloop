@@ -60,6 +60,7 @@ rhino-plugin/yak-probe/
 
 # Old generated deployment bundles and release staging
 deployment/
+site_publish_checkout/
 output/
 *.tar.gz
 

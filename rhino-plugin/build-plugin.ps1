@@ -1,4 +1,4 @@
-param([switch]$SkipCompile)
+param([switch]$SkipCompile, [string]$OutputDirectory)
 
 $ErrorActionPreference = 'Stop'
 $pluginRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -8,10 +8,14 @@ $yak = 'C:\Program Files\Rhino 8\System\yak.exe'
 $project = Join-Path $pluginRoot 'CarbonLoop.Rhino\CarbonLoop.Rhino.csproj'
 $binaryRoot = Join-Path $pluginRoot 'CarbonLoop.Rhino\bin\Release'
 $staging = Join-Path $pluginRoot ('.build\' + [guid]::NewGuid().ToString('N'))
-$dist = Join-Path $pluginRoot 'dist'
-$version = '0.2.1'
+$dist = if ($OutputDirectory) { [System.IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $pluginRoot 'dist' }
+$version = '0.3.1'
 
-if (-not (Test-Path -LiteralPath $dotnet)) { throw '没有找到项目本地 .NET SDK。' }
+if (-not (Test-Path -LiteralPath $dotnet)) {
+  $installedDotnet = Get-Command dotnet -ErrorAction SilentlyContinue
+  if (-not $installedDotnet) { throw '请安装 .NET SDK，或提供项目本地 .tools\dotnet\dotnet.exe。' }
+  $dotnet = $installedDotnet.Source
+}
 if (-not (Test-Path -LiteralPath $yak)) { throw '没有找到 Rhino 8 Yak 打包工具。' }
 
 $env:DOTNET_CLI_HOME = Join-Path $projectRoot '.tools'
@@ -24,7 +28,7 @@ if (-not $SkipCompile) {
   if ($LASTEXITCODE -ne 0) { throw '插件编译失败。' }
 }
 
-if (Test-Path -LiteralPath $dist) { Remove-Item -LiteralPath $dist -Recurse -Force }
+if (Test-Path -LiteralPath $dist) { throw '输出目录已存在。请指定新的 -OutputDirectory，保留已有安装包。' }
 New-Item -ItemType Directory -Path $staging | Out-Null
 New-Item -ItemType Directory -Path $dist | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $staging 'web') | Out-Null
@@ -34,6 +38,7 @@ Copy-Item -LiteralPath (Join-Path $binaryRoot 'CarbonLoop.Rhino.rhp') -Destinati
 Copy-Item -LiteralPath (Join-Path $projectRoot 'integration\rhino\rhino-semantic-profile.json') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $pluginRoot 'README.md') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $pluginRoot '安装说明.md') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $pluginRoot 'Rhino发送前核验验收说明.md') -Destination $staging
 $webSource = Join-Path $projectRoot 'reference-demo'
 Get-ChildItem -LiteralPath $webSource | Where-Object {
   $_.Name -notin @('.test-exports', 'downloads')
@@ -67,10 +72,10 @@ try {
 }
 
 Copy-Item -LiteralPath (Join-Path $pluginRoot '安装说明.md') -Destination $dist
-$rhiZip = Join-Path $dist "CarbonLoop-Rhino-$version.zip"
-$rhi = Join-Path $dist "CarbonLoop-Rhino-$version.rhi"
-Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $rhiZip -CompressionLevel Optimal
-Move-Item -LiteralPath $rhiZip -Destination $rhi
+Copy-Item -LiteralPath (Join-Path $pluginRoot 'Rhino发送前核验验收说明.md') -Destination $dist
+# Legacy RHI uses ReflectionOnly inspection on older Rhino installations and
+# cannot resolve System.Runtime 7. Ship the verified Yak installation route.
+Copy-Item -LiteralPath (Join-Path $pluginRoot 'package\install-carbonloop.cmd') -Destination $dist
 $aiStaging = Join-Path $pluginRoot ('.build\ai-' + [guid]::NewGuid().ToString('N'))
 $aiServiceTarget = Join-Path $aiStaging 'ai-service'
 $aiReferenceTarget = Join-Path $aiStaging 'reference-demo'

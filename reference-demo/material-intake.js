@@ -20,6 +20,10 @@
   if(Array.isArray(raw.layers)&&raw.layers.length>1)return result('unknown','包含多种材料，需要分别读取材料层与数量，不能取第一种材料代替整个构件。');
   // Product names/attributes only: no inference from object colour, geometry or material grade alone.
   const direct=C.materials.find(m=>m.id===product&&m.id!=='unknown');
+  if(raw.review?.confirmed===true&&raw.inference?.source==='rhino-user-confirmed'){
+   if(product==='unknown')return {...result('unknown','建筑师在 Rhino 中确认保留未确定材料，需继续核验。'),classificationSource:'rhino_user_confirmed'};
+   if(direct)return {...result(direct.id,raw.inference.basis||'建筑师已在 Rhino 核验面板确认材料类别。'),classificationSource:'rhino_user_confirmed'};
+  }
   let matches=rules.filter(([,re])=>re.test(name)).map(([id])=>id);
   if(matches.includes('rebar-mesh'))matches=matches.filter(id=>id!=='rebar');
   // A specific engineered-timber name wins over the generic word "timber".

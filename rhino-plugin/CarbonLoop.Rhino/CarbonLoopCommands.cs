@@ -33,6 +33,9 @@ public sealed class CarbonLoopSendCommand : Command
 
     protected override Result RunCommand(RhinoDoc doc, RunMode mode)
     {
+        var plugin = CarbonLoopPlugin.Instance;
+        if (plugin is null) return Result.Failure;
+        using var syncPause = plugin.SuspendSynchronizationForReview();
         var picked = PickObjects(doc);
         if (picked.Cancelled)
             return Result.Cancel;
@@ -44,28 +47,33 @@ public sealed class CarbonLoopSendCommand : Command
 
         try
         {
+            if (!SemanticReviewDialog.Confirm(doc, picked.Objects))
+            {
+                RhinoApp.WriteLine("CarbonLoop：已关闭核验，本次没有发送模型。");
+                return Result.Cancel;
+            }
+            var objects = picked.Objects.Select(item => doc.Objects.FindId(item.Id))
+                .Where(item => item is not null && !item.IsDeleted).Cast<RhinoObject>().ToList();
+            var floor = picked.Mode == "floor" && objects.Count > 0 ? RhinoSemanticReview.LayerPath(doc, objects[0]) : picked.Floor;
             var exporter = new RhinoModelExporter(doc);
-            var export = exporter.Export(picked.Objects, picked.Mode, picked.Floor);
+            var export = exporter.Export(objects, picked.Mode, floor);
             if (export.IncludedCount == 0)
             {
                 RhinoApp.WriteLine("CarbonLoop：没有读取到可分析或可核对的模型对象。");
                 return Result.Nothing;
             }
 
-            var plugin = CarbonLoopPlugin.Instance;
-            if (plugin is null)
-                return Result.Failure;
             var published = plugin.Publish(export.Json);
             if (!published.Success)
             {
-                RhinoApp.WriteLine($"CarbonLoop 发送失败：{published.Message}");
+                RhinoApp.WriteLine($"CarbonLoop 核验已保存到 Rhino，但发送失败：{published.Message} 请重新运行 CarbonLoopSend。");
                 return Result.Failure;
             }
 
-            plugin.RememberSyncScope(doc, picked.Mode, picked.Floor, picked.Objects);
+            plugin.RememberSyncScope(doc, picked.Mode, floor, objects);
 
             RhinoApp.WriteLine(
-                $"CarbonLoop：{published.Message} 自动识别 {export.RecognizedCount} 个，待核对 {export.UnknownCount} 个，辅助对象 {export.ExcludedCount} 个。后续图层、构件和材质修改会自动同步。"
+                $"CarbonLoop：{published.Message} 构件类型明确 {export.RecognizedCount} 个，待核对 {export.UnknownCount} 个，辅助对象 {export.ExcludedCount} 个。几何变化自动同步；图层、名称或材料变化后需在 Rhino 重新确认。"
             );
             plugin.OpenWorkbench(out _, published.Revision);
             return Result.Success;

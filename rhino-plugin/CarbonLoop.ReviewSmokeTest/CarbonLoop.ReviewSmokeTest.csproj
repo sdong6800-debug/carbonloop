@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+    <UseAppHost>false</UseAppHost>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RhinoSystemDir>C:\Program Files\Rhino 8\System</RhinoSystemDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="RhinoCommon"><HintPath>$(RhinoSystemDir)\RhinoCommon.dll</HintPath></Reference>
+    <Compile Include="..\CarbonLoop.Rhino\SemanticProfile.cs" Link="SemanticProfile.cs" />
+    <Compile Include="..\CarbonLoop.Rhino\RhinoSemanticReview.cs" Link="RhinoSemanticReview.cs" />
+    <Compile Include="..\CarbonLoop.Rhino\SemanticReviewDialog.cs" Link="SemanticReviewDialog.cs" />
+    <Compile Include="..\CarbonLoop.Rhino\RhinoModelExporter.cs" Link="RhinoModelExporter.cs" />
+  </ItemGroup>
+</Project>

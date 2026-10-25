@@ -9,7 +9,7 @@ namespace CarbonLoop.Rhino;
 internal sealed class RhinoModelExporter
 {
     private const string ContractVersion = "carbonloop.rhino.intake/1.0.0";
-    private const string PluginVersion = "carbonloop-rhino-plugin/0.2.1";
+    private const string PluginVersion = "carbonloop-rhino-plugin/0.3.1";
     private readonly RhinoDoc _doc;
     private readonly SemanticProfile _profile;
     private readonly string _unitName;
@@ -78,7 +78,12 @@ internal sealed class RhinoModelExporter
         var attributes = rhinoObject.Attributes;
         var layer = attributes.LayerIndex >= 0 ? _doc.Layers[attributes.LayerIndex]?.FullPath ?? "" : "";
         var name = string.IsNullOrWhiteSpace(attributes.Name) ? layer.Split(new[] { "::" }, StringSplitOptions.None).LastOrDefault() ?? rhinoObject.Id.ToString()[..8] : attributes.Name;
-        var type = _profile.InferType(attributes.GetUserString("CarbonLoop.Type"), name, layer);
+        var reviewed = RhinoSemanticReview.IsCurrent(_doc, rhinoObject);
+        var hasReview = !string.IsNullOrEmpty(attributes.GetUserString(RhinoSemanticReview.StampKey));
+        var explicitType = hasReview && !reviewed ? null : attributes.GetUserString("CarbonLoop.Type");
+        var type = explicitType == "unknown" && reviewed
+            ? new Inference("unknown", "CarbonLoop.Type", 1, "建筑师在 Rhino 中确认保留未确定类别。")
+            : _profile.InferType(explicitType, name, layer);
         var eligibility = _profile.AnalysisEligibility(layer, name);
         var itemFloor = attributes.GetUserString("CarbonLoop.Floor") ?? scopeFloor ?? layer.Split(new[] { "::" }, StringSplitOptions.None).FirstOrDefault();
         var volume = ReadVolume(geometry);
@@ -106,22 +111,25 @@ internal sealed class RhinoModelExporter
     private object? ReadMaterial(RhinoObject rhinoObject, string layer)
     {
         var attributes = rhinoObject.Attributes;
-        var explicitMaterial = attributes.GetUserString("CarbonLoop.Material");
+        var reviewed = RhinoSemanticReview.IsCurrent(_doc, rhinoObject);
+        var hasReview = !string.IsNullOrEmpty(attributes.GetUserString(RhinoSemanticReview.StampKey));
+        var explicitMaterial = hasReview && !reviewed ? null : attributes.GetUserString("CarbonLoop.Material");
         var grade = attributes.GetUserString("CarbonLoop.Grade") ?? "";
-        var materialName = explicitMaterial;
-        if (string.IsNullOrWhiteSpace(materialName))
-        {
-            try { materialName = rhinoObject.GetRenderMaterial(true)?.Name; } catch { }
-        }
-        if (string.IsNullOrWhiteSpace(materialName) && attributes.MaterialIndex >= 0)
-            materialName = _doc.Materials[attributes.MaterialIndex]?.Name;
-        var inference = _profile.InferMaterial(materialName ?? "", layer);
+        var native = RhinoSemanticReview.ReadNativeMaterial(_doc, rhinoObject);
+        var materialName = string.IsNullOrWhiteSpace(explicitMaterial) ? native.Name : explicitMaterial;
+        var category = attributes.GetUserString(RhinoSemanticReview.MaterialCategoryKey);
+        var inference = reviewed && category is not null && _profile.IsMaterial(category)
+            ? new Inference(category, "rhino-user-confirmed", 1, "建筑师已在 Rhino 核验面板确认碳计算材料类别；原渲染材质保留，具体产品性能仍需核实。")
+            : _profile.InferMaterial(materialName, layer);
         if (string.IsNullOrWhiteSpace(materialName) && string.IsNullOrWhiteSpace(inference.Value)) return null;
         materialName = string.IsNullOrWhiteSpace(materialName) ? $"图层建议：{layer.Split(new[] { "::" }, StringSplitOptions.None).LastOrDefault()}" : materialName;
         return new Dictionary<string, object?>
         {
-            ["id"] = attributes.MaterialIndex >= 0 ? attributes.MaterialIndex.ToString() : materialName,
+            ["id"] = native.Index >= 0 ? native.Index.ToString() : materialName,
             ["name"] = materialName, ["productType"] = inference.Value, ["grade"] = grade,
+            ["originalName"] = native.Name,
+            ["review"] = new { confirmed = reviewed, version = attributes.GetUserString("CarbonLoop.ReviewVersion"),
+                confirmedAt = attributes.GetUserString("CarbonLoop.ReviewedAt") },
             ["origin"] = string.IsNullOrWhiteSpace(explicitMaterial) ? $"Rhino {attributes.MaterialSource} 材质（支持对象或图层继承）" : "CarbonLoop.Material 对象属性",
             ["inference"] = new { source = inference.Source, confidence = inference.Confidence, basis = inference.Basis }
         };
